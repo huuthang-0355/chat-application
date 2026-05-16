@@ -27,3 +27,5 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+implementation_plan.md
