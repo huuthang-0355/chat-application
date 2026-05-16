@@ -3,10 +3,14 @@ package network.multiClient;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import network.protocol.Message;
+import network.protocol.MessageParser;
+import network.protocol.MessageType;
 import server.session.SessionManager;
 
 public class MultiChatServer {
@@ -54,6 +58,18 @@ public class MultiChatServer {
             if (client.isAuthenticated())
                 client.send(msg);
         }
+    }
+
+    public void broadcastUserList() {
+        List<String> onlineUsernameList = sessionManager.getOnlineUsernames();
+
+        String userListStr = String.join(",", onlineUsernameList);
+
+        Message msg = new Message(MessageType.USER_LIST, "SYSTEM", "ALL", userListStr);
+
+        String encodedString = MessageParser.encode(msg);
+
+        broadcast(encodedString, null);
     }
 
     // remove client func, which will be called in finally block of ClientHandler

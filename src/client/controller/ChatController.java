@@ -1,7 +1,7 @@
 package client.controller;
 
-import java.io.IOError;
 import java.io.IOException;
+import java.util.List;
 
 import javax.swing.SwingUtilities;
 
@@ -17,6 +17,8 @@ public class ChatController {
     private NetworkService networkService;
     private String username;
     private LoginView loginView;
+
+    private String pendingUserList = null; // online users buffer for initial login
 
     // called by LoginView
     public void connect(String username, String password, boolean isRegister, String host, int port,
@@ -66,6 +68,12 @@ public class ChatController {
                     chatView = new ChatView(this);
                     chatView.setVisible(true);
                     chatView.displayMessage("[SYSTEM]: " + msg.getContent());
+
+                    // aplly buffer user list if it arrvied before chatView was ready
+                    if (pendingUserList != null) {
+                        chatView.updateUserList(pendingUserList.split(","));
+                        pendingUserList = null;
+                    }
                 });
                 break;
 
@@ -84,6 +92,19 @@ public class ChatController {
                 }
 
                 chatView.displayMessage("[" + sender + "]: " + msg.getContent());
+                break;
+
+            case USER_LIST:
+                // content = "alice,peter,roger"
+                String[] onlineUsers = msg.getContent().split(",");
+
+                if (chatView != null) {
+                    // handle UI
+                    chatView.updateUserList(onlineUsers);
+                } else {
+                    pendingUserList = msg.getContent();
+                }
+
                 break;
 
             case PRIVATE:

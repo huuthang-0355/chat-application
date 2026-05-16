@@ -87,6 +87,9 @@ public class ClientHandler implements Runnable {
                     this.username + " joined the chat.");
 
             server.broadcast(MessageParser.encode(systemMsg), this);
+
+            // broadcast updated user list
+            server.broadcastUserList();
         } else {
             // username already taken
             Message failMessage = new Message(
@@ -143,6 +146,9 @@ public class ClientHandler implements Runnable {
                     this.username + " joined the chat.");
 
             server.broadcast(MessageParser.encode(systemMsg), this);
+
+            // broadcast updated user list
+            server.broadcastUserList();
         } else {
             // username already taken
             Message failMessage = new Message(
@@ -239,6 +245,9 @@ public class ClientHandler implements Runnable {
                 Message leaveMsg = new Message(MessageType.MSG, "SYSTEM", "ALL", this.username + " has left the room.");
 
                 server.broadcast(MessageParser.encode(leaveMsg), this);
+
+                // updated user list (remove 1 user)
+                server.broadcastUserList();
             }
 
             // close resource

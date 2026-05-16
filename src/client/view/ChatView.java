@@ -1,13 +1,17 @@
 package client.view;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.PageAttributes;
 import java.awt.Panel;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -21,6 +25,9 @@ public class ChatView extends JFrame {
     private ChatController controller;
     private JTextArea chatArea;
     private JTextField inputField;
+
+    private DefaultListModel<String> userModel;
+    private JList<String> onlineUserlist;
 
     public ChatView(ChatController controller) {
         this.controller = controller;
@@ -38,6 +45,20 @@ public class ChatView extends JFrame {
         chatArea.setLineWrap(true);
         // add ScrollPane
         mainPanel.add(new JScrollPane(chatArea), BorderLayout.CENTER);
+
+        // online users area
+        JPanel onlineUsersPanel = new JPanel(new BorderLayout(10, 10));
+        onlineUsersPanel.add(new JLabel("Online Users"), BorderLayout.NORTH);
+
+        userModel = new DefaultListModel<>();
+        onlineUserlist = new JList<>(userModel);
+
+        onlineUserlist.setForeground(Color.GREEN);
+
+        JScrollPane scrollPane = new JScrollPane(onlineUserlist);
+        onlineUsersPanel.add(scrollPane, BorderLayout.CENTER);
+
+        mainPanel.add(onlineUsersPanel, BorderLayout.EAST);
 
         // input area
         JPanel inputPanel = new JPanel(new BorderLayout());
@@ -89,6 +110,16 @@ public class ChatView extends JFrame {
 
             // scroll to the last line
             chatArea.setCaretPosition(chatArea.getDocument().getLength());
+        });
+    }
+
+    public void updateUserList(String[] onlineUserList) {
+        SwingUtilities.invokeLater(() -> {
+            userModel.clear();
+
+            for (String onlineUser : onlineUserList) {
+                userModel.addElement(onlineUser);
+            }
         });
     }
 }
