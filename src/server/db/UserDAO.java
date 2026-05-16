@@ -30,6 +30,26 @@ public class UserDAO {
         return false;
     }
 
+    public String getPasswordHash(String username) {
+        String sql = "SELECT password_hash FROM users WHERE username = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, username);
+
+            try (ResultSet rs = ps.executeQuery();) {
+                if (rs.next())
+                    return rs.getString("password_hash");
+            }
+
+            return null;
+        } catch (SQLException e) {
+            System.out.println("[UserDAO] getPasswordHash error: " + e.getMessage());
+            return null;
+        }
+    }
+
     public int findUserByUsername(String username) {
         String sql = "SELECT id FROM users WHERE username = ?";
 

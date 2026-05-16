@@ -12,6 +12,8 @@ import network.protocol.MessageParser;
 import network.protocol.MessageType;
 import server.db.MessageDAO;
 import server.db.UserDAO;
+import server.service.AuthService;
+import server.session.SessionManager;
 
 // implement Runnable to be able to put in ExecutorServic
 public class ClientHandler implements Runnable {
@@ -20,6 +22,9 @@ public class ClientHandler implements Runnable {
     private BufferedReader in;
     private PrintWriter out;
     private String username;
+
+    private boolean authenticated = false;
+    private AuthService authService = new AuthService();
 
     private int userId;
     private UserDAO userDAO = new UserDAO();
@@ -38,12 +43,116 @@ public class ClientHandler implements Runnable {
 
     }
 
-    public String getUsername() {
-        return username;
+    private void handleRegister(Message msg) {
+        String usernameAttempt = msg.getSender();
+        String password = msg.getContent();
+
+        String result = authService.register(usernameAttempt, password);
+
+        if (result.equals("OK")) {
+            // check whether this user has logged in
+            SessionManager sessionManager = server.getSessionManager();
+            if (sessionManager.isOnline(usernameAttempt)) {
+                Message failMessage = new Message(
+                        MessageType.LOGIN_FAIL,
+                        "SYSTEM",
+                        usernameAttempt,
+                        "Already logged in from another clinet");
+
+                send(MessageParser.encode(failMessage));
+                return;
+            }
+
+            // save username
+            this.username = usernameAttempt;
+            this.userId = userDAO.findUserByUsername(this.username);
+
+            // sever log
+            System.out.println("[SERVER-LOG]: " + this.username + " has connected.");
+
+            // automatically login when registering successfully
+            this.authenticated = true;
+            sessionManager.addSession(this.username, this);
+            Message okMessage = new Message(
+                    MessageType.LOGIN_OK,
+                    "SYSTEM",
+                    this.username,
+                    "Registration successfully! Welcome, " + this.username);
+            send(MessageParser.encode(okMessage));
+
+            Message systemMsg = new Message(
+                    MessageType.MSG,
+                    "SYSTEM",
+                    "ALL",
+                    this.username + " joined the chat.");
+
+            server.broadcast(MessageParser.encode(systemMsg), this);
+        } else {
+            // username already taken
+            Message failMessage = new Message(
+                    MessageType.LOGIN_FAIL,
+                    "SYSTEM",
+                    usernameAttempt,
+                    result);
+
+            send(MessageParser.encode(failMessage));
+        }
     }
 
-    public int getUserId() {
-        return userId;
+    private void handleLogin(Message msg) {
+        String usernameAttempt = msg.getSender();
+        String password = msg.getContent();
+
+        String result = authService.login(usernameAttempt, password);
+
+        if (result.equals("OK")) {
+            // check whether this user has logged in
+            SessionManager sessionManager = server.getSessionManager();
+            if (sessionManager.isOnline(usernameAttempt)) {
+                Message failMessage = new Message(
+                        MessageType.LOGIN_FAIL,
+                        "SYSTEM",
+                        usernameAttempt,
+                        "Already logged in from another clinet");
+
+                send(MessageParser.encode(failMessage));
+                return;
+            }
+
+            // save username
+            this.username = usernameAttempt;
+            this.userId = userDAO.findUserByUsername(this.username);
+
+            // sever log
+            System.out.println("[SERVER-LOG]: " + this.username + " has connected.");
+
+            // save db for loggin
+            this.authenticated = true;
+            sessionManager.addSession(this.username, this);
+            Message okMessage = new Message(
+                    MessageType.LOGIN_OK,
+                    "SYSTEM",
+                    this.username,
+                    "Registration successfully! Welcome, " + this.username);
+            send(MessageParser.encode(okMessage));
+
+            Message systemMsg = new Message(
+                    MessageType.MSG,
+                    "SYSTEM",
+                    "ALL",
+                    this.username + " joined the chat.");
+
+            server.broadcast(MessageParser.encode(systemMsg), this);
+        } else {
+            // username already taken
+            Message failMessage = new Message(
+                    MessageType.LOGIN_FAIL,
+                    "SYSTEM",
+                    usernameAttempt,
+                    result);
+
+            send(MessageParser.encode(failMessage));
+        }
     }
 
     @Override
@@ -60,31 +169,26 @@ public class ClientHandler implements Runnable {
                 if (message == null)
                     continue;
 
+                // AUTHENTICATION GATE
+                if (!authenticated) {
+                    // only allow LOGIN and REGISTER
+                    if (message.getType() == MessageType.REGISTER)
+                        handleRegister(message);
+                    else if (message.getType() == MessageType.LOGIN)
+                        handleLogin(message);
+                    else {
+                        Message errorMsg = new Message(MessageType.ERROR, "SYSTEM", this.username,
+                                "Please login first.");
+
+                        send(MessageParser.encode(errorMsg));
+                    }
+
+                    continue; // do NOT fall throguh to the switch below.
+                }
+
+                // AUTHENTICATED
                 // 3. route msg basing on TYPE
                 switch (message.getType()) {
-                    case LOGIN:
-                        // save username from LOGIN package
-                        this.username = message.getSender();
-
-                        // check whether this username existed in db
-                        int dbUserId = userDAO.findUserByUsername(username);
-                        if (dbUserId == -1) { // not existing
-                            userDAO.createUser(this.username, "nopassword");
-
-                            dbUserId = userDAO.findUserByUsername(this.username); // re-find id in db after creating
-                        }
-
-                        this.userId = dbUserId;
-
-                        System.out.println("[SERVER-LOG]: " + this.username + " has connected.");
-
-                        // create MSG package so that system infomrs of all users.
-                        Message sysMsg = new Message(MessageType.MSG, "SYSTEM", "ALL",
-                                username + " joined in chat room.");
-
-                        server.broadcast(MessageParser.encode(sysMsg), this);
-                        break;
-
                     case MSG:
                         server.broadcast(rawLine, this);
 
@@ -127,8 +231,11 @@ public class ClientHandler implements Runnable {
             // code block for Clean Up in order to avoid MEMORY LEAK
             server.removeClient(this); // remove client from the list of server
 
-            // create system package informing user has left the room
-            if (this.username != null) {
+            // remove user from session manager
+            if (authenticated && username != null) {
+                server.getSessionManager().removeSession(username);
+
+                // informing user has left the room
                 Message leaveMsg = new Message(MessageType.MSG, "SYSTEM", "ALL", this.username + " has left the room.");
 
                 server.broadcast(MessageParser.encode(leaveMsg), this);
@@ -158,4 +265,17 @@ public class ClientHandler implements Runnable {
         if (this.out != null)
             out.println(msg);
     }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
+
 }

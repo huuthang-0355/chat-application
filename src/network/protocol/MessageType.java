@@ -9,4 +9,8 @@ public enum MessageType {
     FILE, // file transfer
     ERROR, // server sends an error to clients
     USER_LIST, // server sneds the list of online users
+
+    REGISTER, // user register
+    LOGIN_OK,
+    LOGIN_FAIL
 }

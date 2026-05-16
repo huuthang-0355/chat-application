@@ -16,24 +16,30 @@ public class ChatController {
     private ChatView chatView;
     private NetworkService networkService;
     private String username;
+    private LoginView loginView;
 
     // called by LoginView
-    public void connect(String username, String host, int port, LoginView loginView) {
+    public void connect(String username, String password, boolean isRegister, String host, int port,
+            LoginView loginView) {
         try {
+
+            // CLOSE previous connection before openning a new one
+            if (networkService != null) {
+                networkService.disconnect();
+                networkService = null;
+            }
+
             this.username = username;
+            this.loginView = loginView;
+
             // create a new thread to read msg
             networkService = new NetworkService(host, port, this);
             networkService.start();
 
-            // send LOGIN package
-            networkService.send(new Message(MessageType.LOGIN, username, "ALL", ""));
+            // send either REGISTER or LOGIN
+            MessageType authType = isRegister ? MessageType.REGISTER : MessageType.LOGIN;
+            networkService.send(new Message(authType, username, "ALL", password));
 
-            // close login UI and open chat UI
-            SwingUtilities.invokeLater(() -> {
-                loginView.dispose();
-                chatView = new ChatView(this);
-                chatView.setVisible(true);
-            });
         } catch (IOException e) {
             loginView.setStatus("Connection error: " + e.getMessage());
         }
@@ -49,11 +55,29 @@ public class ChatController {
 
     // called by NetworkService (background thread)
     public void onMessageReceived(Message msg) {
-        if (chatView == null)
-            return; // guard: ChatView may not be open yet
 
         switch (msg.getType()) {
+            case LOGIN_OK: // auth succeed -> open ChatView
+                this.username = msg.getTarget();
+
+                SwingUtilities.invokeLater(() -> {
+                    loginView.dispose();
+
+                    chatView = new ChatView(this);
+                    chatView.setVisible(true);
+                    chatView.displayMessage("[SYSTEM]: " + msg.getContent());
+                });
+                break;
+
+            case LOGIN_FAIL:
+                // auth failed -> show error in LoginView
+                loginView.setStatus(msg.getContent());
+
+                break;
+
             case MSG:
+                if (chatView == null)
+                    return; // guard: ChatView may not be open yet
                 String sender = msg.getSender();
                 if (msg.getSender().equals(this.username)) {
                     sender = "YOU";

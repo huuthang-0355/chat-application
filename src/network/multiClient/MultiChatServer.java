@@ -7,6 +7,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import server.session.SessionManager;
+
 public class MultiChatServer {
 
     private int port;
@@ -14,6 +16,8 @@ public class MultiChatServer {
     private CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
 
     private ExecutorService executor = Executors.newCachedThreadPool();
+
+    private SessionManager sessionManager = new SessionManager();
 
     public MultiChatServer(int port) {
         this.port = port;
@@ -47,7 +51,8 @@ public class MultiChatServer {
     // receive msg and sender, send msg to other clients (not sender)
     public void broadcast(String msg, ClientHandler sender) {
         for (ClientHandler client : clients) {
-            client.send(msg);
+            if (client.isAuthenticated())
+                client.send(msg);
         }
     }
 
@@ -65,4 +70,9 @@ public class MultiChatServer {
 
         return null;
     }
+
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
+
 }

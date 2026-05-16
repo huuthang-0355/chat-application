@@ -1,39 +1,39 @@
 package client.view;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.Arrays;
+
 import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
 
 import client.controller.ChatController;
 
-import java.awt.*;
-import java.util.Arrays;
+public class RegisterView extends JFrame {
 
-public class LoginView extends JFrame {
+    private ChatController controller;
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JTextField hostField;
     private JTextField portField;
     private JLabel statusLabel;
-    private RegisterView registerView;
-    private JRadioButton registerRadioBtn;
-    private JRadioButton loginRadioBtn;
-    private ChatController controller;
 
-    public LoginView() {
-
+    public RegisterView(LoginView loginView) {
         controller = new ChatController();
 
-        setTitle("Chatting Login");
+        setTitle("Chatting Register");
         setSize(600, 400);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // align center
@@ -42,21 +42,13 @@ public class LoginView extends JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Radio: Login & Register
-        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        loginRadioBtn = new JRadioButton("LOGIN");
-        loginRadioBtn.setSelected(true);
+        // heading
+        JPanel headingPanel = new JPanel();
+        JLabel heading = new JLabel("Register to Connect!");
+        heading.setFont(new Font("Arial", Font.BOLD, 20));
+        headingPanel.add(heading);
 
-        registerRadioBtn = new JRadioButton("REGISTER");
-
-        ButtonGroup group = new ButtonGroup();
-        group.add(loginRadioBtn);
-        group.add(registerRadioBtn);
-
-        radioPanel.add(loginRadioBtn);
-        radioPanel.add(registerRadioBtn);
-
-        mainPanel.add(radioPanel, BorderLayout.NORTH);
+        mainPanel.add(headingPanel, BorderLayout.NORTH);
 
         // Form panel using GridBagLayout
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -113,7 +105,11 @@ public class LoginView extends JFrame {
         JButton connectBtn = new JButton("Connect");
         connectBtn.setPreferredSize(new Dimension(120, 35));
 
+        JButton backBtn = new JButton("Back");
+        backBtn.setPreferredSize(new Dimension(120, 35));
+
         buttonPanel.add(connectBtn);
+        buttonPanel.add(backBtn);
 
         // Status label
         statusLabel = new JLabel("Not Connected", SwingConstants.CENTER);
@@ -131,14 +127,12 @@ public class LoginView extends JFrame {
 
         connectBtn.addActionListener(e -> {
             statusLabel.setText("Connecting...");
-            // connectBtn.setEnabled(false);
+            connectBtn.setEnabled(false);
 
             String user = usernameField.getText().trim();
             char[] passChars = passwordField.getPassword();
             String password = new String(passChars);
             Arrays.fill(passChars, '\0');
-
-            boolean isRegister = registerRadioBtn.isSelected();
 
             String host = hostField.getText().trim();
             int port = Integer.parseInt(portField.getText());
@@ -146,9 +140,18 @@ public class LoginView extends JFrame {
             // socket connection is a BLOCKING operation --> bring it to seperate thread.
             // if not, the UI will be 'Treo' during waiting for connection period.
             new Thread(() -> {
-                controller.connect(user, password, isRegister, host, port, this);
+                controller.connect(user, password, true, host, port, loginView);
             }).start();
 
+        });
+
+        backBtn.addActionListener(e -> {
+            // close register view --> show login view
+            SwingUtilities.invokeLater(() -> {
+                this.dispose();
+
+                loginView.showGUI();
+            });
         });
     }
 
