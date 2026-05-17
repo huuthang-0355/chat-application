@@ -28,17 +28,15 @@ This project is a Java programming course assignment that builds a fully functio
 
 ## Features
 
-- ✅ Multi-client TCP server — handles unlimited concurrent connections via `ExecutorService`
-- ✅ Structured text protocol — `TYPE|SENDER|TARGET|CONTENT` format with typed routing (`MSG`, `LOGIN`, `LOGOUT`, `PRIVATE`, `ERROR`, ...)
-- ✅ Broadcast messaging — messages sent to all connected clients in real-time
-<!-- - ✅ Private messaging — direct message to a specific online user -->
-- ✅ Swing GUI client — login window + chat window with live message area and online user list
-- ✅ Database persistence — every message saved to PostgreSQL via JDBC DAO layer
-- ✅ Thread-safe design — `synchronized send()`, `CopyOnWriteArrayList`, EDT compliance
-- 🚧 User authentication (BCrypt password hashing) — Stage 7, in progress
-- 🚧 Group chat rooms — Stage 8, planned
-- 🚧 File transfer — Stage 9, planned
-- 🚧 Message history retrieval — Stage 10, planned
+**Chat Application Assignment Requirements:**
+
+- ✅ User registration from the client application, and login after registration.
+- ✅ A user can chat with multiple other online users simultaneously (Public Chat / Broadcast).
+- ✅ Users can create group chats and chat within these groups.
+- 🚧 File transfer capabilities during a chat.
+- 🚧 View personal chat history and delete lines of chat history.
+
+*(Optional features not currently required: voice chat, webcam).*
 
 ---
 
@@ -59,7 +57,20 @@ This project is a Java programming course assignment that builds a fully functio
 | `postgresql-42.7.3.jar` | PostgreSQL JDBC driver | https://jdbc.postgresql.org/download/ |
 | `jbcrypt-0.4.jar` | Password hashing *(Stage 7)* | https://mvnrepository.com/artifact/org.mindrot/jbcrypt/0.4 |
 
-Place JARs in the `lib/` folder and add them to IntelliJ via `File → Project Structure → Modules → Dependencies → + → JARs or Directories`.
+Place JARs in the `lib/` folder at the root of your project.
+
+**For IntelliJ IDEA:**
+`File → Project Structure → Modules → Dependencies → + → JARs or Directories`, then select the `lib/` folder.
+
+**For Visual Studio Code (VS Code):**
+If you have the **Extension Pack for Java** installed, look for the **Java Projects** explorer panel (usually at the bottom of the Explorer view on the left). Expand it, find **Referenced Libraries**, click the **+** icon next to it, and select the JAR files in your `lib/` folder. Alternatively, you can manually add them by updating the `.vscode/settings.json` file:
+```json
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar"
+    ]
+}
+```
 
 ---
 
@@ -102,7 +113,8 @@ private static final String PASSWORD = "your_password"; // your PostgreSQL passw
 
 1. Download `postgresql-42.7.3.jar` from https://jdbc.postgresql.org/download/
 2. Place it in the `lib/` folder
-3. IntelliJ: `File → Project Structure → Modules → Dependencies → + → JARs or Directories → select the JAR → OK`
+3. **IntelliJ:** `File → Project Structure → Modules → Dependencies → + → JARs or Directories → select the JAR → OK`
+4. **VS Code:** Open **Java Projects** view → click **+** next to **Referenced Libraries** → select the JAR. Or add `"java.project.referencedLibraries": ["lib/**/*.jar"]` to `.vscode/settings.json`.
 
 ### 5. Run the server
 
