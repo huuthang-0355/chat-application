@@ -24,7 +24,6 @@ public class LoginView extends JFrame {
     private JTextField hostField;
     private JTextField portField;
     private JLabel statusLabel;
-    private RegisterView registerView;
     private JRadioButton registerRadioBtn;
     private JRadioButton loginRadioBtn;
     private ChatController controller;

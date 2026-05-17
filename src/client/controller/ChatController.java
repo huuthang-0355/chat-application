@@ -20,6 +20,8 @@ public class ChatController {
 
     private String pendingUserList = null; // online users buffer for initial login
 
+    private String pendingGroupList = null; // group list users belongs to for initial login
+
     // called by LoginView
     public void connect(String username, String password, boolean isRegister, String host, int port,
             LoginView loginView) {
@@ -74,6 +76,11 @@ public class ChatController {
                         chatView.updateUserList(pendingUserList.split(","));
                         pendingUserList = null;
                     }
+
+                    if (pendingGroupList != null) {
+                        chatView.updateGroupList(pendingGroupList);
+                        pendingGroupList = null;
+                    }
                 });
                 break;
 
@@ -107,6 +114,36 @@ public class ChatController {
 
                 break;
 
+            case GROUP_MSG:
+                if (chatView == null)
+                    return;
+
+                // target = groupId, sender = username, content = msg text
+                int groupId = Integer.parseInt(msg.getTarget());
+                String _sender = msg.getSender();
+
+                if (_sender.equals(this.username))
+                    _sender = "YOU";
+
+                String display = "[" + _sender + "]: " + msg.getContent();
+
+                chatView.displayGroupMessage(groupId, display);
+                break;
+
+            case GROUP_LIST:
+                // content = "team-a:3,study:7" or ""
+                if (chatView != null) {
+                    chatView.updateGroupList(msg.getContent());
+                } else {
+                    pendingGroupList = msg.getContent();
+                }
+
+                break;
+
+            case CREATE_GROUP:
+                // sever does NOT send CREATE_GROUP back - it send GROUP_LIST instead
+                break;
+
             case PRIVATE:
                 chatView.displayMessage("[Private from " + msg.getSender() + "]: " + msg.getContent());
                 break;
@@ -127,5 +164,26 @@ public class ChatController {
         }
 
         System.exit(0);
+    }
+
+    // helper function
+
+    public void createGroup(String groupName) {
+        networkService.send(new Message(MessageType.CREATE_GROUP, this.username, "ALL", groupName));
+    }
+
+    // called by ChatView when user clicks Join
+    public void joinGroup(int groupId) {
+        networkService.send(new Message(MessageType.JOIN_GROUP, username, "ALL", String.valueOf(groupId)));
+    }
+
+    // called by ChatView when user clicks Leave
+    public void leaveGroup(int groupId) {
+        networkService.send(new Message(MessageType.LEAVE_GROUP, username, "ALL", String.valueOf(groupId)));
+    }
+
+    // called by ChatView when user sends a group message
+    public void sendGroupMessage(int groupId, String text) {
+        networkService.send(new Message(MessageType.GROUP_MSG, username, String.valueOf(groupId), text));
     }
 }

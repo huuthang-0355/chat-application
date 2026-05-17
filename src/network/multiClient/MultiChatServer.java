@@ -8,9 +8,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.w3c.dom.UserDataHandler;
+
 import network.protocol.Message;
 import network.protocol.MessageParser;
 import network.protocol.MessageType;
+import server.db.GroupDAO;
+import server.db.UserDAO;
 import server.session.SessionManager;
 
 public class MultiChatServer {
@@ -22,6 +26,9 @@ public class MultiChatServer {
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     private SessionManager sessionManager = new SessionManager();
+
+    private GroupDAO groupDAO = new GroupDAO();
+    private UserDAO userDAO = new UserDAO();
 
     public MultiChatServer(int port) {
         this.port = port;
@@ -91,4 +98,23 @@ public class MultiChatServer {
         return sessionManager;
     }
 
+    // used for sending msg to a specific group
+    public void sendToGroupMembers(int groupId, String encodedMsg) {
+        // find all members in a group
+        List<Integer> memberIdList = groupDAO.getMemberIds(groupId);
+
+        for (int memberId : memberIdList) {
+            // get username for each memberId
+            String memberUsername = userDAO.getUsernameById(memberId);
+
+            if (memberUsername == null)
+                continue;
+
+            // get handler of online usernames (members)
+            ClientHandler handler = sessionManager.getHandler(memberUsername);
+
+            if (handler != null)
+                handler.send(encodedMsg);
+        }
+    }
 }

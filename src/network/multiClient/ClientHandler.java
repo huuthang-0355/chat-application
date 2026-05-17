@@ -10,9 +10,11 @@ import java.net.SocketException;
 import network.protocol.Message;
 import network.protocol.MessageParser;
 import network.protocol.MessageType;
+import server.db.GroupDAO;
 import server.db.MessageDAO;
 import server.db.UserDAO;
 import server.service.AuthService;
+import server.service.GroupService;
 import server.session.SessionManager;
 
 // implement Runnable to be able to put in ExecutorServic
@@ -29,6 +31,10 @@ public class ClientHandler implements Runnable {
     private int userId;
     private UserDAO userDAO = new UserDAO();
     private MessageDAO messageDAO = new MessageDAO();
+
+    // group
+    private GroupService groupService = new GroupService();
+    private GroupDAO groupDAO = new GroupDAO();
 
     public ClientHandler(Socket socket, MultiChatServer server) {
         this.clientSocket = socket;
@@ -90,6 +96,11 @@ public class ClientHandler implements Runnable {
 
             // broadcast updated user list
             server.broadcastUserList();
+
+            // send this user's group list
+            String groupList = groupService.getUserGroupList(this.userId);
+            Message groupListMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
+            this.send(MessageParser.encode(groupListMsg));
         } else {
             // username already taken
             Message failMessage = new Message(
@@ -149,6 +160,11 @@ public class ClientHandler implements Runnable {
 
             // broadcast updated user list
             server.broadcastUserList();
+
+            // send this user's group list
+            String groupList = groupService.getUserGroupList(this.userId);
+            Message groupListMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
+            this.send(MessageParser.encode(groupListMsg));
         } else {
             // username already taken
             Message failMessage = new Message(
@@ -220,6 +236,88 @@ public class ClientHandler implements Runnable {
 
                         break;
 
+                    case CREATE_GROUP:
+                        String groupName = message.getContent();
+                        String result = groupService.createGroup(groupName, this.userId);
+
+                        if (result.startsWith("OK:")) {
+                            int newGroupId = Integer.parseInt(result.split(":")[1]); // response is OK:groupdId
+
+                            // send back user's updated group list
+                            String groupList = groupService.getUserGroupList(this.userId);
+                            Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
+
+                            this.send(MessageParser.encode(listMsg));
+
+                            // log
+                            System.out.println("[SERVER-LOG]: " + username + " created group '" + groupName + "'");
+
+                        } else {
+                            Message errMsg = new Message(MessageType.ERROR, "SYSTEM", this.username, result);
+                            this.send(MessageParser.encode(errMsg));
+                        }
+                        break;
+
+                    case JOIN_GROUP:
+                        int joinGroupId = Integer.parseInt(message.getContent());
+
+                        String joinResult = groupService.joinGroup(joinGroupId, this.userId);
+
+                        if (joinResult.equals("OK")) {
+                            String groupList = groupService.getUserGroupList(this.userId);
+                            Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
+
+                            this.send(MessageParser.encode(listMsg));
+                        } else {
+                            Message err = new Message(MessageType.ERROR, "SYSTEM", this.username, joinResult);
+
+                            this.send(MessageParser.encode(err));
+                        }
+
+                        break;
+
+                    case LEAVE_GROUP:
+                        int leaveGroupId = Integer.parseInt(message.getContent());
+
+                        // notify remaining members before leaving
+                        Message leaveMsg = new Message(MessageType.GROUP_MSG, "SYSTEM", String.valueOf(leaveGroupId),
+                                this.username + " has left the group.");
+
+                        server.sendToGroupMembers(leaveGroupId, MessageParser.encode(leaveMsg));
+
+                        String leaveResult = groupService.leaveGroup(leaveGroupId, this.userId);
+
+                        if (leaveResult.equals("OK")) {
+                            String groupList = groupService.getUserGroupList(this.userId);
+                            Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
+
+                            this.send(MessageParser.encode(listMsg));
+                        } else {
+                            Message errMsg = new Message(MessageType.ERROR, "SYSTEM", this.username, leaveResult);
+
+                            this.send(MessageParser.encode(errMsg));
+                        }
+                        break;
+
+                    case GROUP_MSG:
+                        int targetGroupId = Integer.parseInt(message.getTarget());
+
+                        // only members can send to the group
+                        if (!groupService.isMember(targetGroupId, this.userId)) {
+                            Message err = new Message(MessageType.ERROR, "SYSTEM", this.username,
+                                    "You are not a member of group " + targetGroupId);
+
+                            this.send(MessageParser.encode(err));
+                            break;
+                        }
+
+                        // deliver to all online members in group
+                        server.sendToGroupMembers(targetGroupId, rawLine);
+
+                        // save into db
+                        groupDAO.saveGroupMessage(targetGroupId, this.userId, message.getContent());
+
+                        break;
                     case LOGOUT:
                         // stop the while loop and jump in finally block
                         return;
