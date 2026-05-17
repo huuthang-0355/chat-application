@@ -55,7 +55,6 @@ This project is a Java programming course assignment that builds a fully functio
 | Library | Purpose | Download |
 |---|---|---|
 | `postgresql-42.7.3.jar` | PostgreSQL JDBC driver | https://jdbc.postgresql.org/download/ |
-| `jbcrypt-0.4.jar` | Password hashing *(Stage 7)* | https://mvnrepository.com/artifact/org.mindrot/jbcrypt/0.4 |
 
 Place JARs in the `lib/` folder at the root of your project.
 
