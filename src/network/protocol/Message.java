@@ -1,7 +1,12 @@
 package network.protocol;
 
+import java.io.Serializable;
+
 // protocol format: TYPE|SENDER|TARGET|CONTENT
-public class Message {
+public class Message implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private MessageType type;
     private String sender;
     private String target;

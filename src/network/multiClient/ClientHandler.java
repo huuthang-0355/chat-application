@@ -1,14 +1,12 @@
 package network.multiClient;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 
 import network.protocol.Message;
-import network.protocol.MessageParser;
 import network.protocol.MessageType;
 import server.db.GroupDAO;
 import server.db.MessageDAO;
@@ -21,8 +19,8 @@ import server.session.SessionManager;
 public class ClientHandler implements Runnable {
     private Socket clientSocket;
     private MultiChatServer server; // reference to server to use broadcast() function
-    private BufferedReader in;
-    private PrintWriter out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
     private String username;
 
     private boolean authenticated = false;
@@ -41,8 +39,10 @@ public class ClientHandler implements Runnable {
         this.server = server;
 
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
+
+            in = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             System.out.println("[ERROR]: Cannot initialize I/O stream for client");
         }
@@ -65,7 +65,7 @@ public class ClientHandler implements Runnable {
                         usernameAttempt,
                         "Already logged in from another clinet");
 
-                send(MessageParser.encode(failMessage));
+                send(failMessage);
                 return;
             }
 
@@ -84,7 +84,7 @@ public class ClientHandler implements Runnable {
                     "SYSTEM",
                     this.username,
                     "Registration successfully! Welcome, " + this.username);
-            send(MessageParser.encode(okMessage));
+            send(okMessage);
 
             Message systemMsg = new Message(
                     MessageType.MSG,
@@ -92,7 +92,7 @@ public class ClientHandler implements Runnable {
                     "ALL",
                     this.username + " joined the chat.");
 
-            server.broadcast(MessageParser.encode(systemMsg), this);
+            server.broadcast(systemMsg, this);
 
             // broadcast updated user list
             server.broadcastUserList();
@@ -100,7 +100,7 @@ public class ClientHandler implements Runnable {
             // send this user's group list
             String groupList = groupService.getUserGroupList(this.userId);
             Message groupListMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
-            this.send(MessageParser.encode(groupListMsg));
+            this.send(groupListMsg);
         } else {
             // username already taken
             Message failMessage = new Message(
@@ -109,7 +109,7 @@ public class ClientHandler implements Runnable {
                     usernameAttempt,
                     result);
 
-            send(MessageParser.encode(failMessage));
+            send(failMessage);
         }
     }
 
@@ -129,7 +129,7 @@ public class ClientHandler implements Runnable {
                         usernameAttempt,
                         "Already logged in from another clinet");
 
-                send(MessageParser.encode(failMessage));
+                send(failMessage);
                 return;
             }
 
@@ -148,7 +148,7 @@ public class ClientHandler implements Runnable {
                     "SYSTEM",
                     this.username,
                     "Registration successfully! Welcome, " + this.username);
-            send(MessageParser.encode(okMessage));
+            send(okMessage);
 
             Message systemMsg = new Message(
                     MessageType.MSG,
@@ -156,7 +156,7 @@ public class ClientHandler implements Runnable {
                     "ALL",
                     this.username + " joined the chat.");
 
-            server.broadcast(MessageParser.encode(systemMsg), this);
+            server.broadcast(systemMsg, this);
 
             // broadcast updated user list
             server.broadcastUserList();
@@ -164,7 +164,7 @@ public class ClientHandler implements Runnable {
             // send this user's group list
             String groupList = groupService.getUserGroupList(this.userId);
             Message groupListMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
-            this.send(MessageParser.encode(groupListMsg));
+            this.send(groupListMsg);
         } else {
             // username already taken
             Message failMessage = new Message(
@@ -173,7 +173,7 @@ public class ClientHandler implements Runnable {
                     usernameAttempt,
                     result);
 
-            send(MessageParser.encode(failMessage));
+            send(failMessage);
         }
     }
 
@@ -181,11 +181,9 @@ public class ClientHandler implements Runnable {
     public void run() {
         try {
 
-            String rawLine;
+            Message message;
 
-            while ((rawLine = in.readLine()) != null) {
-                // 1. decode raw msg to Message object
-                Message message = MessageParser.decode(rawLine);
+            while ((message = (Message) in.readObject()) != null) {
 
                 // 2. ignore if msg is invalid type
                 if (message == null)
@@ -202,7 +200,7 @@ public class ClientHandler implements Runnable {
                         Message errorMsg = new Message(MessageType.ERROR, "SYSTEM", this.username,
                                 "Please login first.");
 
-                        send(MessageParser.encode(errorMsg));
+                        send(message);
                     }
 
                     continue; // do NOT fall throguh to the switch below.
@@ -212,7 +210,7 @@ public class ClientHandler implements Runnable {
                 // 3. route msg basing on TYPE
                 switch (message.getType()) {
                     case MSG:
-                        server.broadcast(rawLine, this);
+                        server.broadcast(message, this);
 
                         // save message (all -> null in receiver)
                         messageDAO.saveMessage(userId, null, message.getContent());
@@ -224,14 +222,14 @@ public class ClientHandler implements Runnable {
 
                         if (targetHandler != null) {
                             // send raw data to target user
-                            targetHandler.send(rawLine);
+                            targetHandler.send(message);
 
                             // save private message into db (with receiver_id)
                             messageDAO.saveMessage(this.userId, targetHandler.getUserId(), message.getContent());
                         } else {
                             Message errMsg = new Message(MessageType.ERROR, "SYSTEM", username,
                                     "User " + targetUser + " is offline or not found.");
-                            this.send(MessageParser.encode(errMsg));
+                            this.send(errMsg);
                         }
 
                         break;
@@ -247,14 +245,14 @@ public class ClientHandler implements Runnable {
                             String groupList = groupService.getUserGroupList(this.userId);
                             Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
 
-                            this.send(MessageParser.encode(listMsg));
+                            this.send(listMsg);
 
                             // log
                             System.out.println("[SERVER-LOG]: " + username + " created group '" + groupName + "'");
 
                         } else {
                             Message errMsg = new Message(MessageType.ERROR, "SYSTEM", this.username, result);
-                            this.send(MessageParser.encode(errMsg));
+                            this.send(errMsg);
                         }
                         break;
 
@@ -267,11 +265,11 @@ public class ClientHandler implements Runnable {
                             String groupList = groupService.getUserGroupList(this.userId);
                             Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
 
-                            this.send(MessageParser.encode(listMsg));
+                            this.send(listMsg);
                         } else {
                             Message err = new Message(MessageType.ERROR, "SYSTEM", this.username, joinResult);
 
-                            this.send(MessageParser.encode(err));
+                            this.send(err);
                         }
 
                         break;
@@ -283,7 +281,7 @@ public class ClientHandler implements Runnable {
                         Message leaveMsg = new Message(MessageType.GROUP_MSG, "SYSTEM", String.valueOf(leaveGroupId),
                                 this.username + " has left the group.");
 
-                        server.sendToGroupMembers(leaveGroupId, MessageParser.encode(leaveMsg));
+                        server.sendToGroupMembers(leaveGroupId, leaveMsg);
 
                         String leaveResult = groupService.leaveGroup(leaveGroupId, this.userId);
 
@@ -291,11 +289,11 @@ public class ClientHandler implements Runnable {
                             String groupList = groupService.getUserGroupList(this.userId);
                             Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
 
-                            this.send(MessageParser.encode(listMsg));
+                            this.send(listMsg);
                         } else {
                             Message errMsg = new Message(MessageType.ERROR, "SYSTEM", this.username, leaveResult);
 
-                            this.send(MessageParser.encode(errMsg));
+                            this.send(errMsg);
                         }
                         break;
 
@@ -307,12 +305,12 @@ public class ClientHandler implements Runnable {
                             Message err = new Message(MessageType.ERROR, "SYSTEM", this.username,
                                     "You are not a member of group " + targetGroupId);
 
-                            this.send(MessageParser.encode(err));
+                            this.send(err);
                             break;
                         }
 
                         // deliver to all online members in group
-                        server.sendToGroupMembers(targetGroupId, rawLine);
+                        server.sendToGroupMembers(targetGroupId, message);
 
                         // save into db
                         groupDAO.saveGroupMessage(targetGroupId, this.userId, message.getContent());
@@ -331,6 +329,12 @@ public class ClientHandler implements Runnable {
             System.out.println("[SERVER-LOG]: " + this.username + " suddenly disconnected");
         } catch (IOException e) {
             System.out.println("Error disconnection from " + username);
+        } catch (NumberFormatException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         } finally {
             // code block for Clean Up in order to avoid MEMORY LEAK
             server.removeClient(this); // remove client from the list of server
@@ -342,7 +346,7 @@ public class ClientHandler implements Runnable {
                 // informing user has left the room
                 Message leaveMsg = new Message(MessageType.MSG, "SYSTEM", "ALL", this.username + " has left the room.");
 
-                server.broadcast(MessageParser.encode(leaveMsg), this);
+                server.broadcast(leaveMsg, this);
 
                 // updated user list (remove 1 user)
                 server.broadcastUserList();
@@ -368,9 +372,15 @@ public class ClientHandler implements Runnable {
     // WHY SYNCHRONIZED: for example we have 3 clients: AN, BINH, CHI. If AN and
     // BINH send msg simultaneously
     // they will race the right to use the out -> race condition.
-    public synchronized void send(String msg) {
-        if (this.out != null)
-            out.println(msg);
+    public synchronized void send(Message msg) {
+        try {
+            out.writeObject(msg);
+            out.flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     public String getUsername() {

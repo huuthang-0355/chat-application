@@ -11,7 +11,6 @@ import java.util.concurrent.Executors;
 import org.w3c.dom.UserDataHandler;
 
 import network.protocol.Message;
-import network.protocol.MessageParser;
 import network.protocol.MessageType;
 import server.db.GroupDAO;
 import server.db.UserDAO;
@@ -60,7 +59,7 @@ public class MultiChatServer {
     }
 
     // receive msg and sender, send msg to other clients (not sender)
-    public void broadcast(String msg, ClientHandler sender) {
+    public void broadcast(Message msg, ClientHandler sender) {
         for (ClientHandler client : clients) {
             if (client.isAuthenticated())
                 client.send(msg);
@@ -72,11 +71,9 @@ public class MultiChatServer {
 
         String userListStr = String.join(",", onlineUsernameList);
 
-        Message msg = new Message(MessageType.USER_LIST, "SYSTEM", "ALL", userListStr);
+        Message userListMsg = new Message(MessageType.USER_LIST, "SYSTEM", "ALL", userListStr);
 
-        String encodedString = MessageParser.encode(msg);
-
-        broadcast(encodedString, null);
+        broadcast(userListMsg, null);
     }
 
     // remove client func, which will be called in finally block of ClientHandler
@@ -99,7 +96,7 @@ public class MultiChatServer {
     }
 
     // used for sending msg to a specific group
-    public void sendToGroupMembers(int groupId, String encodedMsg) {
+    public void sendToGroupMembers(int groupId, Message msg) {
         // find all members in a group
         List<Integer> memberIdList = groupDAO.getMemberIds(groupId);
 
@@ -114,7 +111,7 @@ public class MultiChatServer {
             ClientHandler handler = sessionManager.getHandler(memberUsername);
 
             if (handler != null)
-                handler.send(encodedMsg);
+                handler.send(msg);
         }
     }
 }
