@@ -6,6 +6,9 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,17 +17,23 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.HyperlinkEvent.EventType;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 
 import client.controller.ChatController;
 
@@ -32,10 +41,10 @@ public class ChatView extends JFrame {
     private ChatController controller;
 
     private JTabbedPane tabbedPane;
-    private Map<Integer, JTextArea> groupChatAreas = new HashMap<>(); // groupId -> JTextArea
+    private Map<Integer, JTextPane> groupChatAreas = new HashMap<>(); // groupId -> JTextPane
     private List<Integer> groupTabIds = new ArrayList<>();
 
-    private JTextArea publicChatArea; // tab 0 - always presnet
+    private JTextPane publicChatArea; // tab 0 - always presnet
     private JTextField inputField;
 
     private DefaultListModel<String> userModel;
@@ -58,9 +67,18 @@ public class ChatView extends JFrame {
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 
         // chat area (showing message) (uneditable)
-        publicChatArea = new JTextArea();
+        publicChatArea = new JTextPane();
+        publicChatArea.setContentType("text/html");
         publicChatArea.setEditable(false);
-        publicChatArea.setLineWrap(true);
+
+        // listening Hyberlink-related Event inside publicChatArea Component
+        publicChatArea.addHyperlinkListener(e -> {
+            if (e.getEventType() == EventType.ACTIVATED) {
+                String fileId = e.getDescription(); // get href value in <a> tag
+                controller.requestFileDownload(fileId);
+            }
+        });
+
         tabbedPane.addTab("Public Chat", new JScrollPane(publicChatArea));
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
@@ -104,9 +122,17 @@ public class ChatView extends JFrame {
         // input area
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputField = new JTextField();
-        JButton sendBtn = new JButton("Send");
         inputPanel.add(inputField, BorderLayout.CENTER);
-        inputPanel.add(sendBtn, BorderLayout.EAST);
+
+        JPanel sendBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JButton sendBtn = new JButton("Send");
+        JButton sendFileBtn = new JButton("📎");
+        sendFileBtn.setToolTipText("Send a file");
+
+        sendBtnPanel.add(sendBtn);
+        sendBtnPanel.add(sendFileBtn);
+        inputPanel.add(sendBtnPanel, BorderLayout.EAST);
+
         mainPanel.add(inputPanel, BorderLayout.SOUTH);
 
         // quit area
@@ -138,6 +164,21 @@ public class ChatView extends JFrame {
 
             inputField.setText("");
             inputField.requestFocus();
+        });
+
+        // click "🔗" to send file
+        sendFileBtn.addActionListener(e -> {
+            int selectedTab = tabbedPane.getSelectedIndex();
+            String target;
+
+            if (selectedTab == 0)
+                target = "ALL"; // public chat
+            else {
+                int groupId = groupTabIds.get(selectedTab - 1);
+                target = String.valueOf(groupId);
+            }
+
+            controller.sendFile(target);
         });
 
         // press 'Enter' in input field
@@ -214,12 +255,35 @@ public class ChatView extends JFrame {
         });
     }
 
+    // append function for append HTML file
+    public void appendToPane(JTextPane pane, String msg) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                HTMLDocument doc = (HTMLDocument) pane.getDocument();
+                HTMLEditorKit kit = (HTMLEditorKit) pane.getEditorKit();
+
+                // escape HTML tags for normal chat
+                String safeMsg = msg.replace("<", "&lt;").replace(">", "&gt;");
+
+                // only accpet <a> tag
+                if (msg.contains("<a href="))
+                    safeMsg = msg;
+
+                kit.insertHTML(doc, doc.getLength(), "<div>" + safeMsg + "</div>", 0, 0, null);
+                pane.setCaretPosition(doc.getLength());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     // controller call this func when having new messages from background thread
     // (ReadThread)
     public void displayMessage(String text) {
         // update UI in EDT thread
         SwingUtilities.invokeLater(() -> {
-            publicChatArea.append(text + "\n");
+            appendToPane(publicChatArea, text);
 
             // scroll to the last line
             publicChatArea.setCaretPosition(publicChatArea.getDocument().getLength());
@@ -238,12 +302,13 @@ public class ChatView extends JFrame {
 
     public void displayGroupMessage(int groupId, String text) {
         SwingUtilities.invokeLater(() -> {
-            JTextArea area = groupChatAreas.get(groupId);
+            JTextPane area = groupChatAreas.get(groupId);
 
             if (area == null)
                 return;
 
-            area.append(text + "\n");
+            // area.append(text + "\n");
+            appendToPane(area, text);
             area.setCaretPosition(area.getDocument().getLength());
         });
     }
@@ -270,9 +335,17 @@ public class ChatView extends JFrame {
                 int id = Integer.parseInt(parts[1]);
 
                 // create new tab
-                JTextArea area = new JTextArea();
+                JTextPane area = new JTextPane();
                 area.setEditable(false);
-                area.setLineWrap(true);
+                area.setContentType("text/html");
+                area.setEditable(false);
+
+                area.addHyperlinkListener(e -> {
+                    if (e.getEventType() == EventType.ACTIVATED) {
+                        String fileId = e.getDescription(); // get href value in <a> tag
+                        controller.requestFileDownload(fileId);
+                    }
+                });
                 tabbedPane.addTab(name, new JScrollPane(area));
                 groupChatAreas.put(id, area);
                 groupTabIds.add(id);
@@ -281,5 +354,36 @@ public class ChatView extends JFrame {
                 groupModel.addElement("📂 " + name + " (" + id + ")");
             }
         });
+    }
+
+    public void promptFileSave(String filename, byte[] fileData) {
+        // open file chooser
+        JFileChooser saveChooser = new JFileChooser();
+        saveChooser.setDialogTitle("Save file as...");
+        saveChooser.setSelectedFile(new File(filename)); // pre-fill the filename
+
+        int saveResult = saveChooser.showSaveDialog(this);
+        if (saveResult != JFileChooser.APPROVE_OPTION)
+            return;
+
+        File saveLocation = saveChooser.getSelectedFile();
+
+        // write byte array to disk in background thread
+        new Thread(() -> {
+            try {
+                Files.write(saveLocation.toPath(), fileData);
+
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, "File saved to:\n" + saveLocation.getAbsolutePath(),
+                            "Save Successful", JOptionPane.INFORMATION_MESSAGE);
+                });
+            } catch (IOException ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
+                        "Failed to save file: " + ex.getMessage(),
+                        "Save Error", JOptionPane.ERROR_MESSAGE));
+            }
+
+        }).start();
+
     }
 }

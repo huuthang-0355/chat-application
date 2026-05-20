@@ -12,11 +12,25 @@ public class Message implements Serializable {
     private String target;
     private String content;
 
+    private String fileId;
+    private String filename;
+    private byte[] fileData; // for file transfer
+
     public Message(MessageType type, String sender, String target, String content) {
         this.type = type;
         this.sender = sender;
         this.target = target;
         this.content = (content == null) ? "" : content;
+    }
+
+    public Message(MessageType type, String sender, String target, String filename, String fileId, byte[] fileData) {
+        this.type = type;
+        this.sender = sender;
+        this.target = target;
+        this.filename = filename;
+        this.fileId = fileId;
+        this.fileData = fileData;
+        this.content = ""; // unused for files
     }
 
     public MessageType getType() {
@@ -33,6 +47,18 @@ public class Message implements Serializable {
 
     public String getContent() {
         return content;
+    }
+
+    public byte[] getFileData() {
+        return fileData;
+    }
+
+    public String getFileId() {
+        return fileId;
+    }
+
+    public String getFilename() {
+        return filename;
     }
 
     @Override

@@ -5,7 +5,6 @@ public enum MessageType {
     LOGOUT, // client disconnect
     MSG, // broadcast to everyone
     PRIVATE, // private msg to one specific user
-    FILE, // file transfer
     ERROR, // server sends an error to clients
     USER_LIST, // server sneds the list of online users
 
@@ -18,5 +17,11 @@ public enum MessageType {
     CREATE_GROUP, // client create a new group
     JOIN_GROUP, // client joins group
     LEAVE_GROUP, // client leaves group
-    GROUP_LIST // server sends the list of groups user belongs to
+    GROUP_LIST, // server sends the list of groups user belongs to
+
+    // FILE HANDLING
+    FILE_UPLOAD, // client -> server (contains bytes)
+    FILE_NOTIFY, // server -> client (contains HTML notification, no bytes)
+    FILE_REQ, // client -> server (contains requested fileId)
+    FILE_DOWNLOAD // server -> client (contains requested bytes)
 }

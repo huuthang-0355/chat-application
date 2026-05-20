@@ -1,10 +1,13 @@
 package network.multiClient;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.util.UUID;
 
 import network.protocol.Message;
 import network.protocol.MessageType;
@@ -33,6 +36,8 @@ public class ClientHandler implements Runnable {
     // group
     private GroupService groupService = new GroupService();
     private GroupDAO groupDAO = new GroupDAO();
+
+    private final String SERVER_STORAGE = "server_storage";
 
     public ClientHandler(Socket socket, MultiChatServer server) {
         this.clientSocket = socket;
@@ -316,6 +321,62 @@ public class ClientHandler implements Runnable {
                         groupDAO.saveGroupMessage(targetGroupId, this.userId, message.getContent());
 
                         break;
+
+                    case FILE_UPLOAD:
+                        // generate unique ID and save
+                        String fileId = UUID.randomUUID().toString();
+                        String filename = message.getFilename();
+                        byte[] fileData = message.getFileData();
+
+                        try {
+                            File storageDir = new File(SERVER_STORAGE);
+                            if (!storageDir.exists())
+                                storageDir.mkdir();
+
+                            File dest = new File(storageDir, fileId + "_" + filename);
+                            Files.write(dest.toPath(), fileData);
+
+                            // broadcast notificatio to clients (no bytes)
+                            Message notifyMsg = new Message(MessageType.FILE_NOTIFY, this.username, message.getTarget(),
+                                    filename, fileId, null);
+
+                            if (message.getTarget().equals("ALL"))
+                                server.broadcast(notifyMsg, this);
+                            else if (message.getTarget().matches("\\d+")) {
+                                int groupId = Integer.parseInt(message.getTarget());
+                                server.sendToGroupMembers(groupId, notifyMsg);
+                            }
+
+                        } catch (Exception e) {
+                            this.send(new Message(MessageType.ERROR, "SYSTEM", this.username,
+                                    "Failed to save file on server.", null, null));
+                        }
+                        break;
+
+                    case FILE_REQ: // client wants to downlaod a file
+                        String requestedFileId = message.getFileId();
+                        String requestedFilename = message.getFilename();
+
+                        try {
+                            File src = new File(SERVER_STORAGE, requestedFileId + "_" + requestedFilename);
+                            if (src.exists()) {
+                                byte[] bytes = Files.readAllBytes(src.toPath());
+
+                                Message downloadMsg = new Message(MessageType.FILE_DOWNLOAD, "SYSTEM", this.username,
+                                        requestedFilename, requestedFileId, bytes);
+
+                                this.send(downloadMsg);
+                            } else {
+                                this.send(new Message(MessageType.ERROR, "SYSTEM", this.username,
+                                        "File not found on server"));
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        break;
+
                     case LOGOUT:
                         // stop the while loop and jump in finally block
                         return;

@@ -1,8 +1,12 @@
 package client.controller;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import client.network.NetworkService;
@@ -21,6 +25,8 @@ public class ChatController {
     private String pendingUserList = null; // online users buffer for initial login
 
     private String pendingGroupList = null; // group list users belongs to for initial login
+
+    private final long FILE_MAX_SIZE = 5 * 1024 * 1024; // size limit (5MB)
 
     // called by LoginView
     public void connect(String username, String password, boolean isRegister, String host, int port,
@@ -148,6 +154,34 @@ public class ChatController {
                 chatView.displayMessage("[Private from " + msg.getSender() + "]: " + msg.getContent());
                 break;
 
+            case FILE_NOTIFY:
+
+                String sender_ = msg.getSender();
+                String fname = msg.getFilename();
+                String fid = msg.getFileId();
+
+                // build clickable HTML link
+                // format in hrefValue 'fid:fname', 'f8293:report.pdf'
+                String htmlNotification = String.format(
+                        "<b>[%s]</b>: 📎 Shared a file '%s' - <a href='%s:%s'>[Download]</a>", sender_, fname, fid,
+                        fname);
+
+                String target = msg.getTarget();
+                if (target.equals("ALL")) {
+                    chatView.displayMessage(htmlNotification);
+                } else if (target.matches("\\d+")) {
+                    chatView.displayGroupMessage(Integer.parseInt(target), htmlNotification);
+                }
+                break;
+
+            case FILE_DOWNLOAD:
+                String downloadFilename = msg.getFilename();
+                byte[] downloadBytes = msg.getFileData();
+
+                chatView.promptFileSave(downloadFilename, downloadBytes);
+
+                break;
+
             case ERROR:
                 chatView.displayMessage("[Error]: " + msg.getContent());
                 break;
@@ -166,7 +200,73 @@ public class ChatController {
         System.exit(0);
     }
 
-    // helper function
+    // send file function
+    public void sendFile(String target) {
+        // open file chooser
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select a file to send");
+        int result = chooser.showOpenDialog(null);
+
+        if (result != JFileChooser.APPROVE_OPTION)
+            return;
+
+        File selectedFile = chooser.getSelectedFile();
+
+        // check file size limit
+        if (selectedFile.length() > FILE_MAX_SIZE) {
+            JOptionPane.showMessageDialog(null,
+                    "File too large. Maximum size is 5MB",
+                    "File Error", JOptionPane.ERROR_MESSAGE);
+
+            return;
+        }
+
+        // read and send in background thread - not block EDT UI
+        new Thread(() -> {
+
+            try {
+                // read bytes
+                byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
+
+                // send FILE_UPLOAD
+                Message uploadMsg = new Message(MessageType.FILE_UPLOAD, this.username, target, selectedFile.getName(),
+                        null, fileBytes);
+                // send object
+                networkService.send(uploadMsg);
+
+                // notify UI in the correct tab
+                SwingUtilities.invokeLater(() -> {
+
+                    String text = "[YOU]: 🔗 Sent file: " + selectedFile.getName();
+
+                    if (target.equals("ALL"))
+                        chatView.displayMessage(text);
+                    else if (target.matches("\\d+"))
+                        chatView.displayGroupMessage(Integer.parseInt(target), text);
+
+                });
+            } catch (IOException ex) {
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
+                        "Failed to read file: " + ex.getMessage(),
+                        "File Error", JOptionPane.ERROR_MESSAGE));
+            }
+
+        }).start();
+
+    }
+
+    /// send request to server for downloading file
+    public void requestFileDownload(String hrefData) {
+        // hrefData -> "f2312:report.pdf"
+        String[] parts = hrefData.split(":");
+        String fileId = parts[0];
+        String filename = parts[1];
+
+        // contains HTML request, no data bytes
+        Message reqMsg = new Message(MessageType.FILE_REQ, this.username, "SERVER", filename, fileId, null);
+        networkService.send(reqMsg);
+    }
+    // helper functions
 
     public void createGroup(String groupName) {
         networkService.send(new Message(MessageType.CREATE_GROUP, this.username, "ALL", groupName));
