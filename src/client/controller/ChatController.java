@@ -26,8 +26,6 @@ public class ChatController {
 
     private String pendingGroupList = null; // group list users belongs to for initial login
 
-    private final long FILE_MAX_SIZE = 5 * 1024 * 1024; // size limit (5MB)
-
     // called by LoginView
     public void connect(String username, String password, boolean isRegister, String host, int port,
             LoginView loginView) {
@@ -116,11 +114,13 @@ public class ChatController {
 
                 if (isMe && msg.getMessageId() > 0) {
                     // Your message with a valid DB id - show delete button
-                    text = String.format("<div id='msg-%d'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                    text = String.format(
+                            "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
                             msg.getMessageId(), msg.getContent(), msg.getMessageId());
                 } else if (msg.getMessageId() > 0) {
                     // Someone else's message with a valid DB id
-                    text = String.format("<div id='msg-%d'><b>[%s]</b>: %s</div>",
+                    text = String.format(
+                            "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
                             msg.getMessageId(), displaySender, msg.getContent());
                 } else {
                     // System message or no ID — no delete button, still show YOU if applicable
@@ -155,10 +155,12 @@ public class ChatController {
                 String _displaySender = _isMe ? "YOU" : _sender;
 
                 if (_isMe && msg.getMessageId() > 0) {
-                    groupText = String.format("<div id='msg-%d'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                    groupText = String.format(
+                            "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
                             msg.getMessageId(), msg.getContent(), msg.getMessageId());
                 } else if (msg.getMessageId() > 0) {
-                    groupText = String.format("<div id='msg-%d'><b>[%s]</b>: %s</div>",
+                    groupText = String.format(
+                            "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
                             msg.getMessageId(), _displaySender, msg.getContent());
                 } else {
                     groupText = String.format("<b>[%s]</b>: %s", _displaySender, msg.getContent());
@@ -186,16 +188,18 @@ public class ChatController {
                 break;
 
             case FILE_NOTIFY:
-
                 String sender_ = msg.getSender();
                 String fname = msg.getFilename();
                 String fid = msg.getFileId();
 
-                // build clickable HTML link
-                // format in hrefValue 'fid:fname', 'f8293:report.pdf'
+                boolean isFileMe = sender_.equals(this.username);
+                String fAlign = isFileMe ? "right" : "left";
+                String dispFileSender = isFileMe ? "YOU" : sender_;
+
+                // build clickable HTML link with proper alignment
                 String htmlNotification = String.format(
-                        "<b>[%s]</b>: 📎 Shared a file '%s' - <a href='%s:%s'>[Download]</a>", sender_, fname, fid,
-                        fname);
+                        "<div align='%s' style='text-align: %s;'><b>[%s]</b>: 📎 Shared a file '%s' - <a href='%s:%s'>[Download]</a></div>",
+                        fAlign, fAlign, dispFileSender, fname, fid, fname);
 
                 String target = msg.getTarget();
                 if (target.equals("ALL")) {
@@ -221,22 +225,23 @@ public class ChatController {
                 for (Message pastMsg : pastMessages) {
                     String content = pastMsg.getContent();
                     String histText;
+                    boolean isPastMe = pastMsg.getSender().equals(this.username);
+                    String dispSender = isPastMe ? "YOU" : pastMsg.getSender();
+                    String align = isPastMe ? "right" : "left";
 
                     if (content.equals("[This message was deleted]")) {
-
-                        String dispSender = pastMsg.getSender().equals(this.username) ? "YOU" : pastMsg.getSender();
-
-                        histText = String.format("<div id='msg-%d'><b>[%s]</b>: <i>%s</i></div>",
-                                pastMsg.getMessageId(), dispSender, content);
+                        histText = String.format(
+                                "<div id='msg-%d' align='%s' style='text-align: %s;'><b>[%s]</b>: <i>%s</i></div>",
+                                pastMsg.getMessageId(), align, align, dispSender, content);
                     } else {
-                        // only show delete button if current user is the sender
-                        if (pastMsg.getSender().equals(this.username)) {
+                        if (isPastMe) {
                             histText = String.format(
-                                    "<div id='msg-%d'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                                    "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
                                     pastMsg.getMessageId(), content, pastMsg.getMessageId());
                         } else {
-                            histText = String.format("<div id='msg-%d'><b>[%s]</b>: %s</div>",
-                                    pastMsg.getMessageId(), pastMsg.getSender(), content);
+                            histText = String.format(
+                                    "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
+                                    pastMsg.getMessageId(), dispSender, content);
                         }
                     }
 
@@ -244,7 +249,6 @@ public class ChatController {
                         chatView.displayMessage(histText);
                     else if (msg.getTarget().matches("\\d+"))
                         chatView.displayGroupMessage(Integer.parseInt(msg.getTarget()), histText);
-
                 }
                 break;
 
@@ -265,7 +269,10 @@ public class ChatController {
                 break;
 
             case ERROR:
-                chatView.displayMessage("[Error]: " + msg.getContent());
+                if (chatView != null) {
+                    chatView.hideProgress();
+                    chatView.displayMessage("[Error]: " + msg.getContent());
+                }
                 break;
 
             default:
@@ -289,6 +296,10 @@ public class ChatController {
         System.exit(0);
     }
 
+    public String getUsername() {
+        return this.username;
+    }
+
     // send file function
     public void sendFile(String target) {
         // open file chooser
@@ -301,19 +312,12 @@ public class ChatController {
 
         File selectedFile = chooser.getSelectedFile();
 
-        // check file size limit
-        if (selectedFile.length() > FILE_MAX_SIZE) {
-            JOptionPane.showMessageDialog(null,
-                    "File too large. Maximum size is 5MB",
-                    "File Error", JOptionPane.ERROR_MESSAGE);
-
-            return;
-        }
-
         // read and send in background thread - not block EDT UI
         new Thread(() -> {
 
             try {
+                chatView.showProgress("Uploading file: " + selectedFile.getName() + "...");
+
                 // read bytes
                 byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
 
@@ -326,7 +330,7 @@ public class ChatController {
                 // notify UI in the correct tab
                 SwingUtilities.invokeLater(() -> {
 
-                    String text = "[YOU]: 🔗 Sent file: " + selectedFile.getName();
+                    String text = "[SYSTEM]: YOU sent file: " + selectedFile.getName();
 
                     if (target.equals("ALL"))
                         chatView.displayMessage(text);
@@ -338,6 +342,8 @@ public class ChatController {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
                         "Failed to read file: " + ex.getMessage(),
                         "File Error", JOptionPane.ERROR_MESSAGE));
+            } finally {
+                chatView.hideProgress();
             }
 
         }).start();
@@ -350,6 +356,8 @@ public class ChatController {
         String[] parts = hrefData.split(":");
         String fileId = parts[0];
         String filename = parts[1];
+
+        chatView.showProgress("Downloading file: " + filename + "...");
 
         // contains HTML request, no data bytes
         Message reqMsg = new Message(MessageType.FILE_REQ, this.username, "SERVER", filename, fileId, null);

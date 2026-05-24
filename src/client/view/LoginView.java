@@ -71,7 +71,7 @@ public class LoginView extends JFrame {
 
         gbc.gridx = 1;
         gbc.weightx = 0.6;
-        usernameField = new JTextField("thangthanthien", 20);
+        usernameField = new JTextField(20);
         formPanel.add(usernameField, gbc);
 
         // Password row

@@ -25,6 +25,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
@@ -53,6 +54,10 @@ public class ChatView extends JFrame {
 
     private DefaultListModel<String> groupModel;
     private JList<String> groupList;
+
+    private JPanel statusPanel;
+    private JLabel statusLabel;
+    private JProgressBar statusProgressBar;
 
     public ChatView(ChatController controller) {
         this.controller = controller;
@@ -142,14 +147,43 @@ public class ChatView extends JFrame {
         sendBtnPanel.add(sendFileBtn);
         inputPanel.add(sendBtnPanel, BorderLayout.EAST);
 
-        mainPanel.add(inputPanel, BorderLayout.SOUTH);
+        // container for south panel (input + status progress)
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.add(inputPanel, BorderLayout.NORTH);
+
+        // Status Panel for file transfer progress
+        statusPanel = new JPanel(new BorderLayout());
+        statusPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        statusPanel.setBackground(new Color(245, 245, 245));
+        statusLabel = new JLabel(" ");
+        statusProgressBar = new JProgressBar();
+        statusProgressBar.setIndeterminate(true);
+        statusProgressBar.setPreferredSize(new Dimension(150, 14));
+
+        statusPanel.add(statusLabel, BorderLayout.CENTER);
+        statusPanel.add(statusProgressBar, BorderLayout.EAST);
+        statusPanel.setVisible(false); // Hidden by default
+
+        southPanel.add(statusPanel, BorderLayout.SOUTH);
+        mainPanel.add(southPanel, BorderLayout.SOUTH);
 
         // quit area
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel topPanel = new JPanel(new BorderLayout());
+        
+        // Left side: Logged-in Username display
+        JLabel usernameLabel = new JLabel("Logged in as: " + controller.getUsername());
+        usernameLabel.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
+        usernameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        topPanel.add(usernameLabel, BorderLayout.WEST);
+
+        // Right side: Controls
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton clearHistoryBtn = new JButton("Clear History");
         JButton quitBtn = new JButton("QUIT");
-        topPanel.add(clearHistoryBtn);
-        topPanel.add(quitBtn);
+        btnPanel.add(clearHistoryBtn);
+        btnPanel.add(quitBtn);
+        topPanel.add(btnPanel, BorderLayout.EAST);
+        
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         this.add(mainPanel);
@@ -313,7 +347,9 @@ public class ChatView extends JFrame {
             Element elem = doc.getElement("msg-" + messageId);
 
             if (elem != null) {
-                String replacement = String.format("<div><b>[%s]</b>: <i>[This message was deleted]</i></div>", sender);
+                String align = sender.equals("YOU") ? "right" : "left";
+                String replacement = String.format("<div id='msg-%d' align='%s' style='text-align: %s;'><b>[%s]</b>: <i>[This message was deleted]</i></div>",
+                        messageId, align, align, sender);
 
                 doc.setOuterHTML(elem, replacement);
             }
@@ -438,8 +474,10 @@ public class ChatView extends JFrame {
         saveChooser.setSelectedFile(new File(filename)); // pre-fill the filename
 
         int saveResult = saveChooser.showSaveDialog(this);
-        if (saveResult != JFileChooser.APPROVE_OPTION)
+        if (saveResult != JFileChooser.APPROVE_OPTION) {
+            hideProgress();
             return;
+        }
 
         File saveLocation = saveChooser.getSelectedFile();
 
@@ -456,9 +494,28 @@ public class ChatView extends JFrame {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this,
                         "Failed to save file: " + ex.getMessage(),
                         "Save Error", JOptionPane.ERROR_MESSAGE));
+            } finally {
+                hideProgress();
             }
 
         }).start();
 
+    }
+
+    public void showProgress(String text) {
+        SwingUtilities.invokeLater(() -> {
+            statusLabel.setText(text);
+            statusPanel.setVisible(true);
+            this.revalidate();
+            this.repaint();
+        });
+    }
+
+    public void hideProgress() {
+        SwingUtilities.invokeLater(() -> {
+            statusPanel.setVisible(false);
+            this.revalidate();
+            this.repaint();
+        });
     }
 }

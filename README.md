@@ -240,9 +240,9 @@ groups         — id, name, created_by, created_at
 group_members  — group_id, user_id  (composite PK)
 group_messages — id, group_id, sender_id, content, sent_at
 ```
+**ERD Diagram**
 
-![ERD](docs/images/erd.png)
-> *ERD diagram will be added here.*
+![Schema](./docs/img/schema.png)
 
 ---
 
