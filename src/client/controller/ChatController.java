@@ -257,6 +257,13 @@ public class ChatController {
 
                 break;
 
+            case DELETE_CONVERSATION:
+                // clear the pane silently
+                if (chatView != null) {
+                    chatView.clearChatArea(msg.getTarget());
+                }
+                break;
+
             case ERROR:
                 chatView.displayMessage("[Error]: " + msg.getContent());
                 break;
@@ -349,6 +356,12 @@ public class ChatController {
         networkService.send(reqMsg);
     }
     // helper functions
+
+    public void clearHistory(String target) {
+        Message deleteMsg = new Message(MessageType.DELETE_CONVERSATION, username, target, "");
+
+        networkService.send(deleteMsg);
+    }
 
     public void createGroup(String groupName) {
         networkService.send(new Message(MessageType.CREATE_GROUP, this.username, "ALL", groupName));

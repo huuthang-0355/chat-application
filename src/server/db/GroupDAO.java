@@ -179,19 +179,27 @@ public class GroupDAO {
         return false;
     }
 
-    public List<Message> getGroupHistory(int groupId, int limit, int offset) {
+    public List<Message> getGroupHistory(int groupId, int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
         String sql = "SELECT gm.id, u.username as sender, gm.content " +
                 "FROM group_messages gm JOIN users u ON gm.sender_id = u.id " +
                 "WHERE gm.group_id = ? " +
+                "AND gm.is_deleted = FALSE " +
+                "AND gm.sent_at > COALESCE(" +
+                "    (SELECT cleared_at FROM user_conversation_clears " +
+                "     WHERE user_id = ? AND conversation_type = 'GROUP' AND target_id = ?), " +
+                "    '1970-01-01 00:00:00'::timestamp" +
+                ") " +
                 "ORDER BY gm.sent_at DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, groupId);
-            ps.setInt(2, limit);
-            ps.setInt(3, offset);
+            ps.setInt(2, userId);
+            ps.setString(3, String.valueOf(groupId));
+            ps.setInt(4, limit);
+            ps.setInt(5, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

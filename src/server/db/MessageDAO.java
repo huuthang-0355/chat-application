@@ -37,7 +37,7 @@ public class MessageDAO {
 
             return -1;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("[MessageDAO] saveMessage error: " + e.getMessage());
 
         }
 
@@ -70,22 +70,28 @@ public class MessageDAO {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("[MessageDAO] getHistory error: " + e.getMessage());
         }
         return history;
     }
 
-    public List<Message> getPublicHistory(int limit, int offset) {
+    public List<Message> getPublicHistory(int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
         String sql = "SELECT m.id, u.username as sender, m.content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE m.receiver_id IS NULL " +
                 "AND m.is_deleted = FALSE " +
+                "AND m.sent_at > COALESCE(" +
+                "    (SELECT cleared_at FROM user_conversation_clears " +
+                "     WHERE user_id = ? AND conversation_type = 'PUBLIC' AND target_id = 'ALL'), " +
+                "    '1970-01-01 00:00:00'::timestamp" +
+                ") " +
                 "ORDER BY m.sent_at DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, limit);
-            ps.setInt(2, offset);
+            ps.setInt(1, userId);
+            ps.setInt(2, limit);
+            ps.setInt(3, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -97,7 +103,7 @@ public class MessageDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("[MessageDAO] getPublicHistory error: " + e.getMessage());
 
         }
 
@@ -120,4 +126,22 @@ public class MessageDAO {
 
         return false;
     }
+
+    public int recordClearHistory(int userId, String conversationType, String targetId) {
+        String sql = "INSERT INTO user_conversation_clears (user_id, conversation_type, target_id, cleared_at) " +
+                "VALUES (?, ?, ?, CURRENT_TIMESTAMP) " +
+                "ON CONFLICT (user_id, conversation_type, target_id) " +
+                "DO UPDATE SET cleared_at = CURRENT_TIMESTAMP";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, conversationType);
+            ps.setString(3, targetId);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("[MessageDAO] recordClearHistory error: " + e.getMessage());
+        }
+        return 0;
+    }
+
 }

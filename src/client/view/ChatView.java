@@ -146,7 +146,9 @@ public class ChatView extends JFrame {
 
         // quit area
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton clearHistoryBtn = new JButton("Clear History");
         JButton quitBtn = new JButton("QUIT");
+        topPanel.add(clearHistoryBtn);
         topPanel.add(quitBtn);
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
@@ -215,6 +217,22 @@ public class ChatView extends JFrame {
             this.controller.disconnect();
         });
 
+        clearHistoryBtn.addActionListener(e -> {
+            int selectedTab = tabbedPane.getSelectedIndex();
+            String target = (selectedTab == 0)
+                    ? "ALL"
+                    : String.valueOf(groupTabIds.get(selectedTab - 1));
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "This will permanently delete all YOUR messages in this conversation.\nThis action cannot be undone.",
+                    "Clear History",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (confirm == JOptionPane.YES_OPTION) {
+                controller.clearHistory(target);
+            }
+        });
+
         // + New btn in My Groups section
         newGroupBtn.addActionListener(e -> {
             new CreateGroupDialog(this, controller).setVisible(true);
@@ -270,6 +288,21 @@ public class ChatView extends JFrame {
 
             for (JTextPane area : groupChatAreas.values()) {
                 replaceMessageHTML(area, messageId, sender);
+            }
+        });
+    }
+
+    public void clearChatArea(String target) {
+        SwingUtilities.invokeLater(() -> {
+            JTextPane pane;
+            if (target.equals("ALL")) {
+                pane = publicChatArea;
+            } else {
+                int groupId = Integer.parseInt(target);
+                pane = groupChatAreas.get(groupId);
+            }
+            if (pane != null) {
+                pane.setText("");
             }
         });
     }

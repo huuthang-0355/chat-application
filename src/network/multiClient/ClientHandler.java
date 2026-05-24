@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.StringBufferInputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
@@ -396,11 +397,11 @@ public class ClientHandler implements Runnable {
 
                         if (message.getTarget().equals("ALL")) {
                             // public chat
-                            history = messageDAO.getPublicHistory(limit, offset);
+                            history = messageDAO.getPublicHistory(this.userId, limit, offset);
                         } else if (message.getTarget().matches("\\d+")) {
                             // target is a group ID
                             int groupId = Integer.parseInt(message.getTarget());
-                            history = groupDAO.getGroupHistory(groupId, limit, offset);
+                            history = groupDAO.getGroupHistory(groupId, this.userId, limit, offset);
                         } else {
                             // target is a username (private chat)
                             int targetId = userDAO.findUserByUsername(message.getTarget());
@@ -440,6 +441,24 @@ public class ClientHandler implements Runnable {
                             server.broadcast(deleteBroadcast, null);
 
                         }
+                        break;
+
+                    case DELETE_CONVERSATION:
+                        String clearTarget = message.getTarget();
+                        int rowsDeleted = 0;
+
+                        if (clearTarget.equals("ALL")) {
+                            rowsDeleted = messageDAO.recordClearHistory(this.userId, "PUBLIC", "ALL");
+                        } else if (clearTarget.matches("\\d+")) {
+                            rowsDeleted = messageDAO.recordClearHistory(this.userId, "GROUP", clearTarget);
+                        }
+
+                        // send ACK back to the requester only
+                        Message ackMsg = new Message(MessageType.DELETE_CONVERSATION, "SERVER", clearTarget,
+                                String.valueOf(rowsDeleted));
+
+                        this.send(ackMsg);
+
                         break;
 
                     case LOGOUT:
