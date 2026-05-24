@@ -63,6 +63,13 @@ public class ChatController {
         networkService.send(new Message(MessageType.MSG, username, "ALL", text));
     }
 
+    public void loadHistory(String target, int offset) {
+        // target = "ALL" or "groupId", or "username"
+        Message req = new Message(MessageType.FETCH_HISTORY, username, target, String.valueOf(offset));
+
+        networkService.send(req);
+    }
+
     // called by NetworkService (background thread)
     public void onMessageReceived(Message msg) {
 
@@ -87,6 +94,9 @@ public class ChatController {
                         chatView.updateGroupList(pendingGroupList);
                         pendingGroupList = null;
                     }
+
+                    // load history for public chat on successful login
+                    loadHistory("ALL", 0);
                 });
                 break;
 
@@ -100,11 +110,24 @@ public class ChatController {
                 if (chatView == null)
                     return; // guard: ChatView may not be open yet
                 String sender = msg.getSender();
-                if (msg.getSender().equals(this.username)) {
-                    sender = "YOU";
+                String text;
+                boolean isMe = sender.equals(this.username);
+                String displaySender = isMe ? "YOU" : sender;
+
+                if (isMe && msg.getMessageId() > 0) {
+                    // Your message with a valid DB id - show delete button
+                    text = String.format("<div id='msg-%d'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                            msg.getMessageId(), msg.getContent(), msg.getMessageId());
+                } else if (msg.getMessageId() > 0) {
+                    // Someone else's message with a valid DB id
+                    text = String.format("<div id='msg-%d'><b>[%s]</b>: %s</div>",
+                            msg.getMessageId(), displaySender, msg.getContent());
+                } else {
+                    // System message or no ID — no delete button, still show YOU if applicable
+                    text = String.format("<b>[%s]</b>: %s", displaySender, msg.getContent());
                 }
 
-                chatView.displayMessage("[" + sender + "]: " + msg.getContent());
+                chatView.displayMessage(text);
                 break;
 
             case USER_LIST:
@@ -127,13 +150,21 @@ public class ChatController {
                 // target = groupId, sender = username, content = msg text
                 int groupId = Integer.parseInt(msg.getTarget());
                 String _sender = msg.getSender();
+                String groupText;
+                boolean _isMe = _sender.equals(this.username);
+                String _displaySender = _isMe ? "YOU" : _sender;
 
-                if (_sender.equals(this.username))
-                    _sender = "YOU";
+                if (_isMe && msg.getMessageId() > 0) {
+                    groupText = String.format("<div id='msg-%d'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                            msg.getMessageId(), msg.getContent(), msg.getMessageId());
+                } else if (msg.getMessageId() > 0) {
+                    groupText = String.format("<div id='msg-%d'><b>[%s]</b>: %s</div>",
+                            msg.getMessageId(), _displaySender, msg.getContent());
+                } else {
+                    groupText = String.format("<b>[%s]</b>: %s", _displaySender, msg.getContent());
+                }
 
-                String display = "[" + _sender + "]: " + msg.getContent();
-
-                chatView.displayGroupMessage(groupId, display);
+                chatView.displayGroupMessage(groupId, groupText);
                 break;
 
             case GROUP_LIST:
@@ -182,6 +213,50 @@ public class ChatController {
 
                 break;
 
+            case HISTORY_RESPONSE:
+                List<Message> pastMessages = msg.getHistoryList();
+                if (pastMessages == null)
+                    break;
+
+                for (Message pastMsg : pastMessages) {
+                    String content = pastMsg.getContent();
+                    String histText;
+
+                    if (content.equals("[This message was deleted]")) {
+
+                        String dispSender = pastMsg.getSender().equals(this.username) ? "YOU" : pastMsg.getSender();
+
+                        histText = String.format("<div id='msg-%d'><b>[%s]</b>: <i>%s</i></div>",
+                                pastMsg.getMessageId(), dispSender, content);
+                    } else {
+                        // only show delete button if current user is the sender
+                        if (pastMsg.getSender().equals(this.username)) {
+                            histText = String.format(
+                                    "<div id='msg-%d'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                                    pastMsg.getMessageId(), content, pastMsg.getMessageId());
+                        } else {
+                            histText = String.format("<div id='msg-%d'><b>[%s]</b>: %s</div>",
+                                    pastMsg.getMessageId(), pastMsg.getSender(), content);
+                        }
+                    }
+
+                    if (msg.getTarget().equals("ALL"))
+                        chatView.displayMessage(histText);
+                    else if (msg.getTarget().matches("\\d+"))
+                        chatView.displayGroupMessage(Integer.parseInt(msg.getTarget()), histText);
+
+                }
+                break;
+
+            case DELETE_MSG:
+                if (chatView != null) {
+                    String dispSender = msg.getSender().equals(this.username) ? "YOU" : msg.getSender();
+
+                    chatView.updateMessageDeleted(msg.getMessageId(), dispSender);
+                }
+
+                break;
+
             case ERROR:
                 chatView.displayMessage("[Error]: " + msg.getContent());
                 break;
@@ -189,6 +264,13 @@ public class ChatController {
             default:
                 break;
         }
+    }
+
+    public void deleteMessage(int messageId, String target) {
+        Message req = new Message(MessageType.DELETE_MSG, username, target,
+                "");
+        req.setMessageId(messageId); // set the ID directly using your setter
+        networkService.send(req);
     }
 
     public void disconnect() {

@@ -32,6 +32,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.HyperlinkEvent.EventType;
+import javax.swing.text.Element;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
@@ -74,8 +75,16 @@ public class ChatView extends JFrame {
         // listening Hyberlink-related Event inside publicChatArea Component
         publicChatArea.addHyperlinkListener(e -> {
             if (e.getEventType() == EventType.ACTIVATED) {
-                String fileId = e.getDescription(); // get href value in <a> tag
-                controller.requestFileDownload(fileId);
+                String href = e.getDescription(); // get href value in <a> tag
+                if (href.startsWith("del:")) {
+
+                    // delete request
+                    int messageId = Integer.parseInt(href.split(":")[1]);
+                    controller.deleteMessage(messageId, "ALL");
+                } else {
+                    controller.requestFileDownload(href);
+                }
+
             }
         });
 
@@ -255,6 +264,31 @@ public class ChatView extends JFrame {
         });
     }
 
+    public void updateMessageDeleted(int messageId, String sender) {
+        SwingUtilities.invokeLater(() -> {
+            replaceMessageHTML(publicChatArea, messageId, sender);
+
+            for (JTextPane area : groupChatAreas.values()) {
+                replaceMessageHTML(area, messageId, sender);
+            }
+        });
+    }
+
+    private void replaceMessageHTML(JTextPane pane, int messageId, String sender) {
+        try {
+            HTMLDocument doc = (HTMLDocument) pane.getDocument();
+            Element elem = doc.getElement("msg-" + messageId);
+
+            if (elem != null) {
+                String replacement = String.format("<div><b>[%s]</b>: <i>[This message was deleted]</i></div>", sender);
+
+                doc.setOuterHTML(elem, replacement);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to replace message HTML: " + e.getMessage());
+        }
+    }
+
     // append function for append HTML file
     public void appendToPane(JTextPane pane, String msg) {
         SwingUtilities.invokeLater(() -> {
@@ -262,14 +296,11 @@ public class ChatView extends JFrame {
                 HTMLDocument doc = (HTMLDocument) pane.getDocument();
                 HTMLEditorKit kit = (HTMLEditorKit) pane.getEditorKit();
 
-                // escape HTML tags for normal chat
-                String safeMsg = msg.replace("<", "&lt;").replace(">", "&gt;");
+                // // only accpet <a> tag
+                // if (msg.contains("<a href="))
+                // safeMsg = msg;
 
-                // only accpet <a> tag
-                if (msg.contains("<a href="))
-                    safeMsg = msg;
-
-                kit.insertHTML(doc, doc.getLength(), "<div>" + safeMsg + "</div>", 0, 0, null);
+                kit.insertHTML(doc, doc.getLength(), "<div>" + msg + "</div>", 0, 0, null);
                 pane.setCaretPosition(doc.getLength());
 
             } catch (Exception e) {
@@ -340,15 +371,26 @@ public class ChatView extends JFrame {
                 area.setContentType("text/html");
                 area.setEditable(false);
 
+                final int currentGroupId = id;
                 area.addHyperlinkListener(e -> {
                     if (e.getEventType() == EventType.ACTIVATED) {
-                        String fileId = e.getDescription(); // get href value in <a> tag
-                        controller.requestFileDownload(fileId);
+                        String href = e.getDescription(); // get href value in <a> tag
+
+                        if (href.startsWith("del:")) {
+                            // format: "del:msgId"
+                            int messageId = Integer.parseInt(href.split(":")[1]);
+                            controller.deleteMessage(messageId, String.valueOf(currentGroupId)); // group target
+                        } else {
+                            controller.requestFileDownload(href);
+                        }
+
                     }
                 });
                 tabbedPane.addTab(name, new JScrollPane(area));
                 groupChatAreas.put(id, area);
                 groupTabIds.add(id);
+
+                controller.loadHistory(String.valueOf(id), 0); // load history for this group
 
                 // update WEST list
                 groupModel.addElement("📂 " + name + " (" + id + ")");

@@ -7,6 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import network.protocol.Message;
+import network.protocol.MessageType;
+
 public class GroupDAO {
 
     // return new group's id, or -1 on failure
@@ -136,22 +139,24 @@ public class GroupDAO {
         return new ArrayList<>();
     }
 
-    public boolean saveGroupMessage(int groupId, int senderId, String content) {
-        String sql = "INSERT INTO group_messages (group_id, sender_id, content) VALUES (?, ?, ?)";
+    public int saveGroupMessage(int groupId, int senderId, String content) {
+        String sql = "INSERT INTO group_messages (group_id, sender_id, content) VALUES (?, ?, ?) RETURNING id";
 
         try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, groupId);
             ps.setInt(2, senderId);
             ps.setString(3, content);
 
-            int rows = ps.executeUpdate();
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            }
 
-            return rows > 0;
         } catch (SQLException e) {
             System.out.println("[GroupDAO] saveGroupMessage error: " + e.getMessage());
         }
 
-        return false;
+        return -1;
     }
 
     public boolean isMember(int groupId, int userId) {
@@ -169,6 +174,54 @@ public class GroupDAO {
             return false;
         } catch (SQLException e) {
             System.out.println("[GroupDAO] isMember error: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    public List<Message> getGroupHistory(int groupId, int limit, int offset) {
+        List<Message> history = new ArrayList<>();
+
+        String sql = "SELECT gm.id, u.username as sender, gm.content " +
+                "FROM group_messages gm JOIN users u ON gm.sender_id = u.id " +
+                "WHERE gm.group_id = ? " +
+                "ORDER BY gm.sent_at DESC LIMIT ? OFFSET ?";
+
+        try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, groupId);
+            ps.setInt(2, limit);
+            ps.setInt(3, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Message msg = new Message(MessageType.GROUP_MSG, rs.getString("sender"), String.valueOf(groupId),
+                            rs.getString("content"));
+                    msg.setMessageId(rs.getInt("id"));
+                    history.add(msg);
+                }
+            }
+
+        } catch (SQLException e) {
+            System.out.println("[GroupDAO] getGroupHistory error: " + e.getMessage());
+        }
+
+        return history;
+    }
+
+    public boolean deleteGroupMessage(int messageId, int requesterId, int groupId) {
+        // only allow sender to delete their own message!
+        String sql = "UPDATE group_messages SET is_deleted = TRUE WHERE id = ? AND sender_id = ? AND group_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, messageId);
+            ps.setInt(2, requesterId);
+            ps.setInt(3, groupId);
+            int rows = ps.executeUpdate();
+
+            return rows > 0;
+        } catch (SQLException e) {
+            System.out.println("[GroupDAO] deleteGroupMessage error: " + e.getMessage());
         }
 
         return false;

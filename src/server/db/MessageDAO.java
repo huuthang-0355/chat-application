@@ -2,14 +2,20 @@ package server.db;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+
+import network.protocol.Message;
+import network.protocol.MessageType;
 
 public class MessageDAO {
 
     // if receiverId null --> broadcast message
-    public boolean saveMessage(int senderId, Integer receiverId, String content) {
-        String sql = "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)";
+    public int saveMessage(int senderId, Integer receiverId, String content) {
+        String sql = "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?) RETURNING id";
 
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -23,10 +29,93 @@ public class MessageDAO {
 
             ps.setString(3, content);
 
-            return ps.executeUpdate() > 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+            return -1;
         } catch (SQLException e) {
             e.printStackTrace();
 
+        }
+
+        return -1;
+    }
+
+    public List<Message> getHistory(int user1, int user2, int limit, int offset) {
+        List<Message> history = new ArrayList<>();
+
+        String sql = "SELECT m.id, u.username as sender, m.content " +
+                "FROM messages m JOIN users u ON m.sender_id = u.id " +
+                "WHERE ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)) " +
+                "AND m.is_deleted = FALSE " +
+                "ORDER BY m.sent_at DESC LIMIT ? OFFSET ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, user1);
+            ps.setInt(2, user2);
+            ps.setInt(3, user2);
+            ps.setInt(4, user1);
+            ps.setInt(5, limit);
+            ps.setInt(6, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Message msg = new Message(MessageType.MSG, rs.getString("sender"), String.valueOf(user2),
+                            rs.getString("content"));
+                    msg.setMessageId(rs.getInt("id"));
+                    history.add(msg);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return history;
+    }
+
+    public List<Message> getPublicHistory(int limit, int offset) {
+        List<Message> history = new ArrayList<>();
+        String sql = "SELECT m.id, u.username as sender, m.content " +
+                "FROM messages m JOIN users u ON m.sender_id = u.id " +
+                "WHERE m.receiver_id IS NULL " +
+                "AND m.is_deleted = FALSE " +
+                "ORDER BY m.sent_at DESC LIMIT ? OFFSET ?";
+
+        try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ps.setInt(2, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Message msg = new Message(MessageType.MSG, rs.getString("sender"), null,
+                            rs.getString("content"));
+                    msg.setMessageId(rs.getInt("id"));
+                    history.add(msg);
+
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+
+        }
+
+        return history;
+    }
+
+    public boolean deleteMessage(int messageId, int requesterId) {
+        // only allow sender to delete their own message!
+        String sql = "UPDATE messages SET is_deleted = TRUE WHERE id = ? AND sender_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, messageId);
+            ps.setInt(2, requesterId);
+            int rows = ps.executeUpdate();
+
+            return rows > 0;
+        } catch (SQLException e) {
+            System.out.println("[MessageDAO] deleteMessage error: " + e.getMessage());
         }
 
         return false;

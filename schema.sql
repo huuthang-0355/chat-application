@@ -35,5 +35,6 @@ CREATE TABLE group_messages (
     group_id  INT       REFERENCES groups(id),
     sender_id INT       REFERENCES users(id),
     content   TEXT      NOT NULL,
-    sent_at   TIMESTAMP DEFAULT NOW()
+    sent_at   TIMESTAMP DEFAULT NOW(),
+    is_deleted BOOLEAN  DEFAULT FALSE
 );

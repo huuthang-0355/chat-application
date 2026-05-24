@@ -1,11 +1,15 @@
 package network.protocol;
 
 import java.io.Serializable;
+import java.util.List;
 
 // protocol format: TYPE|SENDER|TARGET|CONTENT
 public class Message implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private int messageId;
+    private List<Message> historyList;
 
     private MessageType type;
     private String sender;
@@ -23,6 +27,15 @@ public class Message implements Serializable {
         this.content = (content == null) ? "" : content;
     }
 
+    // constructor for history response
+    public Message(MessageType type, String sender, String target, List<Message> historyList) {
+    this.type = type;
+    this.sender = sender;
+    this.target = target;
+    this.historyList = historyList;
+}
+
+    // constructor for file transfer
     public Message(MessageType type, String sender, String target, String filename, String fileId, byte[] fileData) {
         this.type = type;
         this.sender = sender;
@@ -31,6 +44,22 @@ public class Message implements Serializable {
         this.fileId = fileId;
         this.fileData = fileData;
         this.content = ""; // unused for files
+    }
+
+    public int getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(int messageId) {
+        this.messageId = messageId;
+    }
+
+    public List<Message> getHistoryList() {
+        return historyList;
+    }
+
+    public void setHistoryList(List<Message> historyList) {
+        this.historyList = historyList;
     }
 
     public MessageType getType() {

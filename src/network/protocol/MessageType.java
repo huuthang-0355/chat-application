@@ -23,5 +23,13 @@ public enum MessageType {
     FILE_UPLOAD, // client -> server (contains bytes)
     FILE_NOTIFY, // server -> client (contains HTML notification, no bytes)
     FILE_REQ, // client -> server (contains requested fileId)
-    FILE_DOWNLOAD // server -> client (contains requested bytes)
+    FILE_DOWNLOAD, // server -> client (contains requested bytes)
+
+    FETCH_HISTORY, // client -> server (request chat history)
+
+    HISTORY_RESPONSE, // server -> client
+
+    DELETE_MSG, // client -> server
+
+    DELETE_CONVERSATION // client -> server
 }

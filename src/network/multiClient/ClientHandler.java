@@ -7,6 +7,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import network.protocol.Message;
@@ -215,10 +217,15 @@ public class ClientHandler implements Runnable {
                 // 3. route msg basing on TYPE
                 switch (message.getType()) {
                     case MSG:
-                        server.broadcast(message, this);
 
-                        // save message (all -> null in receiver)
-                        messageDAO.saveMessage(userId, null, message.getContent());
+                        // save message first to obtain auto-generated ID
+                        int msgId = messageDAO.saveMessage(userId, null, message.getContent());
+
+                        if (msgId != -1)
+                            message.setMessageId(msgId);
+
+                        // broadcast the message (carrying its ID) to everyone
+                        server.broadcast(message, this);
                         break;
 
                     case PRIVATE:
@@ -314,11 +321,14 @@ public class ClientHandler implements Runnable {
                             break;
                         }
 
-                        // deliver to all online members in group
-                        server.sendToGroupMembers(targetGroupId, message);
+                        // save group message first
+                        int gMsgId = groupDAO.saveGroupMessage(targetGroupId, this.userId, message.getContent());
 
-                        // save into db
-                        groupDAO.saveGroupMessage(targetGroupId, this.userId, message.getContent());
+                        if (gMsgId != -1)
+                            message.setMessageId(gMsgId);
+
+                        // deliver message (carrying its ID) to all online members in group
+                        server.sendToGroupMembers(targetGroupId, message);
 
                         break;
 
@@ -375,6 +385,61 @@ public class ClientHandler implements Runnable {
                             e.printStackTrace();
                         }
 
+                        break;
+
+                    case FETCH_HISTORY:
+                        // assume 'content' holds the offset -> "0" for the first 50 msgs
+                        int offset = Integer.parseInt(message.getContent());
+                        int limit = 50;
+
+                        List<Message> history;
+
+                        if (message.getTarget().equals("ALL")) {
+                            // public chat
+                            history = messageDAO.getPublicHistory(limit, offset);
+                        } else if (message.getTarget().matches("\\d+")) {
+                            // target is a group ID
+                            int groupId = Integer.parseInt(message.getTarget());
+                            history = groupDAO.getGroupHistory(groupId, limit, offset);
+                        } else {
+                            // target is a username (private chat)
+                            int targetId = userDAO.findUserByUsername(message.getTarget());
+                            history = messageDAO.getHistory(this.userId, targetId, limit, offset);
+                        }
+
+                        // reverse the list so chronological order is correct in the UI
+                        Collections.reverse(history);
+
+                        // send back to client
+                        Message historyMsg = new Message(MessageType.HISTORY_RESPONSE, "SERVER", message.getTarget(),
+                                history);
+
+                        this.send(historyMsg);
+                        break;
+
+                    case DELETE_MSG:
+                        int delMsgId = message.getMessageId();
+                        String target = message.getTarget();
+                        boolean success = false;
+
+                        if (target != null && target.matches("\\d+")) {
+                            // a group msg deletion
+                            int groupId = Integer.parseInt(target);
+                            success = groupDAO.deleteGroupMessage(delMsgId, this.userId, groupId);
+                        } else {
+                            // a public / private msg deletion
+                            success = messageDAO.deleteMessage(delMsgId, this.userId);
+                        }
+
+                        if (success) {
+                            Message deleteBroadcast = new Message(MessageType.DELETE_MSG,
+                                    this.username, message.getTarget(), "");
+                            deleteBroadcast.setMessageId(delMsgId);
+
+                            // broadcast to all clients
+                            server.broadcast(deleteBroadcast, null);
+
+                        }
                         break;
 
                     case LOGOUT:
