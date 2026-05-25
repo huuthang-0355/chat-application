@@ -7,8 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import network.protocol.Message;
-import network.protocol.MessageType;
+import common.protocol.Message;
+import common.protocol.MessageType;
 
 public class GroupDAO {
 

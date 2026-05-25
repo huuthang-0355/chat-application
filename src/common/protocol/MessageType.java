@@ -1,4 +1,4 @@
-package network.protocol;
+package common.protocol;
 
 public enum MessageType {
     LOGIN, // client sends username to server on connect

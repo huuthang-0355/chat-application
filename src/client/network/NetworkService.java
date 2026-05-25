@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import client.controller.ChatController;
-import network.protocol.Message;
+import common.protocol.Message;
 
 public class NetworkService {
 

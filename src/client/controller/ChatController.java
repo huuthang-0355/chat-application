@@ -12,8 +12,8 @@ import javax.swing.SwingUtilities;
 import client.network.NetworkService;
 import client.view.ChatView;
 import client.view.LoginView;
-import network.protocol.Message;
-import network.protocol.MessageType;
+import common.protocol.Message;
+import common.protocol.MessageType;
 
 public class ChatController {
 

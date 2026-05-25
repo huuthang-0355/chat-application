@@ -1,10 +1,9 @@
-package network.multiClient;
+package server;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.StringBufferInputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
@@ -13,8 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import network.protocol.Message;
-import network.protocol.MessageType;
+import common.protocol.Message;
+import common.protocol.MessageType;
 import server.db.GroupDAO;
 import server.db.MessageDAO;
 import server.db.UserDAO;

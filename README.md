@@ -154,43 +154,44 @@ Run `src/client/ClientApp.java` — the login window opens. You can run multiple
 23120355/
 ├── src/
 │   ├── Main.java                        # Entry point — starts MultiChatServer
-│   │
 │   ├── client/                          # GUI client
 │   │   ├── ClientApp.java               # Launches the Swing application
-│   │   ├── view/
-│   │   │   ├── LoginView.java           # Login window (username, host, port)
-│   │   │   └── ChatView.java            # Main chat window
 │   │   ├── controller/
 │   │   │   └── ChatController.java      # Bridges view and network
-│   │   └── network/
-│   │       └── NetworkService.java      # Owns socket, runs read loop on daemon thread
-│   │
-│   ├── network/
-│   │   ├── basic/                       # Stage 1 — simple echo server/client
-│   │   ├── chat/                        # Stage 2 — two-way console chat
-│   │   │   ├── ChatServer.java
-│   │   │   ├── ChatClient.java
-│   │   │   └── ReadThread.java
-│   │   ├── multiClient/                 # Stage 3 — multi-client server
-│   │   │   ├── MultiChatServer.java     # ExecutorService + CopyOnWriteArrayList
-│   │   │   └── ClientHandler.java       # One per connected client
-│   │   └── protocol/                    # Stage 4 — message protocol
-│   │       ├── MessageType.java         # Enum: MSG, LOGIN, LOGOUT, PRIVATE, ERROR, ...
+│   │   ├── network/
+│   │   │   └── NetworkService.java      # Owns socket, runs read loop on daemon thread
+│   │   └── view/                        # UI Components and Dialogs
+│   │       ├── ChatView.java            # Main chat window
+│   │       ├── CreateGroupDialog.java   
+│   │       ├── GroupMembersDialog.java  
+│   │       ├── JoinGroupDialog.java     
+│   │       ├── LoginView.java           # Login window (username, host, port)
+│   │       └── RegisterView.java        # Registration window
+│   ├── common/                          # Shared between client and server
+│   │   └── protocol/                    # Message protocol Definitions
 │   │       ├── Message.java             # Data class: type + sender + target + content
-│   │       └── MessageParser.java       # encode() / decode() — TYPE|SENDER|TARGET|CONTENT
-│   │
+│   │       └── MessageType.java         # Enum: MSG, LOGIN, LOGOUT, GROUP_MEMBERS, ...
 │   └── server/
-│       └── db/                          # Stage 6 — database layer
-│           ├── DatabaseConfig.java      # JDBC connection (PostgreSQL)
-│           ├── UserDAO.java             # CRUD for users table
-│           └── MessageDAO.java          # save / fetch messages
-│
-├── lib/
-│   └── postgresql-42.7.3.jar           # PostgreSQL JDBC driver
-│
+│       ├── ClientHandler.java           # One per connected client
+│       ├── MultiChatServer.java         # ExecutorService + CopyOnWriteArrayList
+│       ├── db/                          # Database access layer
+│       │   ├── DatabaseConfig.java      # JDBC connection (PostgreSQL)
+│       │   ├── GroupDAO.java            # CRUD for groups and group messages
+│       │   ├── MessageDAO.java          # save / fetch direct messages
+│       │   └── UserDAO.java             # CRUD for users table
+│       ├── service/                     # Server business logic
+│       │   ├── AuthService.java         
+│       │   ├── GroupService.java        
+│       │   └── PasswordUtils.java       
+│       └── session/                     # Session Management
+│           └── SessionManager.java      
+├── docs/                                # Documentation and assets
+├── lib/                                 # Dependencies
+│   └── postgresql-42.7.3.jar            # PostgreSQL JDBC driver
+├── out/                                 # Compiled class files
+├── server_storage/                      # Server uploaded files
 ├── schema.sql                           # DDL — creates all 5 tables
-├── README.md
-└── implementation_plan.md              # 11-stage development roadmap
+└── README.md                            # Project documentation
 ```
 
 ---

@@ -1,4 +1,4 @@
-package network.protocol;
+package common.protocol;
 
 import java.io.Serializable;
 import java.util.List;

@@ -1,4 +1,4 @@
-package network.multiClient;
+package server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -8,10 +8,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.w3c.dom.UserDataHandler;
-
-import network.protocol.Message;
-import network.protocol.MessageType;
+import common.protocol.Message;
+import common.protocol.MessageType;
 import server.db.GroupDAO;
 import server.db.UserDAO;
 import server.session.SessionManager;
