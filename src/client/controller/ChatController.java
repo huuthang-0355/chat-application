@@ -143,6 +143,14 @@ public class ChatController {
 
                 break;
 
+            case GROUP_MEMBERS:
+                String membersData = msg.getContent();
+                String targetGroupId = msg.getTarget();
+                if (chatView != null) {
+                    chatView.showGroupMembers(targetGroupId, membersData);
+                }
+                break;
+
             case GROUP_MSG:
                 if (chatView == null)
                     return;
@@ -388,5 +396,11 @@ public class ChatController {
     // called by ChatView when user sends a group message
     public void sendGroupMessage(int groupId, String text) {
         networkService.send(new Message(MessageType.GROUP_MSG, username, String.valueOf(groupId), text));
+    }
+
+    // called by ChatView to get group members
+    public void requestGroupMembers(int groupId) {
+        Message req = new Message(MessageType.GROUP_MEMBERS, this.username, String.valueOf(groupId), "");
+        networkService.send(req);
     }
 }

@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -169,11 +170,12 @@ public class ChatView extends JFrame {
 
         // quit area
         JPanel topPanel = new JPanel(new BorderLayout());
-        
+
         // Left side: Logged-in Username display
         JLabel usernameLabel = new JLabel("Logged in as: " + controller.getUsername());
         usernameLabel.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
         usernameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        usernameLabel.setForeground(Color.GREEN);
         topPanel.add(usernameLabel, BorderLayout.WEST);
 
         // Right side: Controls
@@ -183,7 +185,7 @@ public class ChatView extends JFrame {
         btnPanel.add(clearHistoryBtn);
         btnPanel.add(quitBtn);
         topPanel.add(btnPanel, BorderLayout.EAST);
-        
+
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
         this.add(mainPanel);
@@ -279,7 +281,9 @@ public class ChatView extends JFrame {
 
         // Leave group - right click to show popup 'Leave Group'
         JPopupMenu groupPopup = new JPopupMenu();
+        JMenuItem viewMembersItem = new JMenuItem("View Members");
         JMenuItem leaveItem = new JMenuItem("Leave Group");
+        groupPopup.add(viewMembersItem);
         groupPopup.add(leaveItem);
 
         groupList.addMouseListener(new MouseAdapter() {
@@ -304,15 +308,34 @@ public class ChatView extends JFrame {
             }
         });
 
+        viewMembersItem.addActionListener(e -> {
+            String selected = groupList.getSelectedValue();
+            if (selected == null)
+                return;
+
+            // regex
+            int groupID = Integer.parseInt(selected.replaceAll(".*\\((\\d+)\\)", "$1"));
+            controller.requestGroupMembers(groupID);
+        });
+
         leaveItem.addActionListener(e -> {
             String selected = groupList.getSelectedValue();
 
             if (selected == null)
                 return;
 
-            // regex
-            int groupID = Integer.parseInt(selected.replaceAll(".*\\((\\d+)\\)", "$1"));
-            controller.leaveGroup(groupID);
+            int confirm = JOptionPane.showConfirmDialog(
+                    this,
+                    "Are you sure you want to leave this group?",
+                    "Confirm Leave Group",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // regex
+                int groupID = Integer.parseInt(selected.replaceAll(".*\\((\\d+)\\)", "$1"));
+                controller.leaveGroup(groupID);
+            }
         });
     }
 
@@ -348,7 +371,8 @@ public class ChatView extends JFrame {
 
             if (elem != null) {
                 String align = sender.equals("YOU") ? "right" : "left";
-                String replacement = String.format("<div id='msg-%d' align='%s' style='text-align: %s;'><b>[%s]</b>: <i>[This message was deleted]</i></div>",
+                String replacement = String.format(
+                        "<div id='msg-%d' align='%s' style='text-align: %s;'><b>[%s]</b>: <i>[This message was deleted]</i></div>",
                         messageId, align, align, sender);
 
                 doc.setOuterHTML(elem, replacement);
@@ -516,6 +540,31 @@ public class ChatView extends JFrame {
             statusPanel.setVisible(false);
             this.revalidate();
             this.repaint();
+        });
+    }
+
+    public void showGroupMembers(String groupId, String membersData) {
+        String groupName = "Group " + groupId;
+        // resolve group name from UI list model
+        for (int i = 0; i < groupModel.getSize(); i++) {
+            String entry = groupModel.getElementAt(i);
+            if (entry.endsWith("(" + groupId + ")")) {
+                int idStart = entry.lastIndexOf('(');
+                // "📂 groupname (groupId)" -> extract groupname
+                String temp = entry.substring(0, idStart).trim(); // "📂 groupname"
+                int spaceIndex = temp.indexOf(' ');
+                if (spaceIndex != -1) {
+                    groupName = temp.substring(spaceIndex + 1).trim();
+                } else {
+                    groupName = temp;
+                }
+                break;
+            }
+        }
+
+        final String finalGroupName = groupName;
+        SwingUtilities.invokeLater(() -> {
+            new GroupMembersDialog(this, finalGroupName, membersData).setVisible(true);
         });
     }
 }

@@ -234,5 +234,24 @@ public class GroupDAO {
 
         return false;
     }
+    public List<String> getGroupMembers(int groupId) {
+        String sql = "SELECT u.username FROM users u "
+                   + "JOIN group_members gm ON u.id = gm.user_id "
+                   + "WHERE gm.group_id = ? "
+                   + "ORDER BY u.username ASC";
+        List<String> members = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, groupId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    members.add(rs.getString("username"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("[GroupDAO] getGroupMembers error: " + e.getMessage());
+        }
+        return members;
+    }
 
 }

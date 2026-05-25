@@ -18,6 +18,7 @@ public enum MessageType {
     JOIN_GROUP, // client joins group
     LEAVE_GROUP, // client leaves group
     GROUP_LIST, // server sends the list of groups user belongs to
+    GROUP_MEMBERS, // client requests members / server sends members
 
     // FILE HANDLING
     FILE_UPLOAD, // client -> server (contains bytes)

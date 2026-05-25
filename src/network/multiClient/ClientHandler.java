@@ -8,6 +8,7 @@ import java.io.StringBufferInputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -308,6 +309,30 @@ public class ClientHandler implements Runnable {
 
                             this.send(errMsg);
                         }
+                        break;
+
+                    case GROUP_MEMBERS:
+                        int grpId = Integer.parseInt(message.getTarget());
+
+                        // only group members can see its members list
+                        if (!groupService.isMember(grpId, this.userId)) {
+                            this.send(new Message(MessageType.ERROR, "SYSTEM", this.username,
+                                    "You are not a member of this group."));
+                            break;
+                        }
+
+                        // fetch members & online statuses
+                        List<String> members = groupDAO.getGroupMembers(grpId);
+                        List<String> formatted = new ArrayList<>();
+                        for (String mbr : members) {
+                            boolean isOnline = server.getSessionManager().isOnline(mbr);
+                            formatted.add(mbr + ":" + (isOnline ? "online" : "offline"));
+                        }
+
+                        String responseContent = String.join(",", formatted);
+                        Message response = new Message(MessageType.GROUP_MEMBERS, "SERVER", String.valueOf(grpId),
+                                responseContent);
+                        this.send(response);
                         break;
 
                     case GROUP_MSG:
