@@ -41,8 +41,8 @@ CREATE TABLE group_messages (
 
 CREATE TABLE user_conversation_clears (
     user_id           INT          REFERENCES users(id) ON DELETE CASCADE,
-    conversation_type VARCHAR(10)  NOT NULL, -- 'PUBLIC' or 'GROUP'
-    target_id         VARCHAR(50)  NOT NULL, -- 'ALL' or string representation of group ID
+    conversation_type VARCHAR(10)  NOT NULL, -- 'PUBLIC', 'GROUP', or 'PRIVATE'
+    target_id         VARCHAR(50)  NOT NULL, -- 'ALL', group ID, or partner username
     cleared_at        TIMESTAMP    DEFAULT NOW(),
     PRIMARY KEY (user_id, conversation_type, target_id)
 );

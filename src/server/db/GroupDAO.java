@@ -182,10 +182,10 @@ public class GroupDAO {
     public List<Message> getGroupHistory(int groupId, int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
-        String sql = "SELECT gm.id, u.username as sender, gm.content " +
+        String sql = "SELECT gm.id, u.username as sender, " +
+                "CASE WHEN gm.is_deleted = TRUE THEN '[This message was deleted]' ELSE gm.content END as content " +
                 "FROM group_messages gm JOIN users u ON gm.sender_id = u.id " +
                 "WHERE gm.group_id = ? " +
-                "AND gm.is_deleted = FALSE " +
                 "AND gm.sent_at > COALESCE(" +
                 "    (SELECT cleared_at FROM user_conversation_clears " +
                 "     WHERE user_id = ? AND conversation_type = 'GROUP' AND target_id = ?), " +

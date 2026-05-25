@@ -174,7 +174,8 @@ public class ChatController {
                     groupText = String.format("<b>[%s]</b>: %s", _displaySender, msg.getContent());
                 }
 
-                chatView.displayGroupMessage(groupId, groupText);
+                chatView.ensureTabOpen(String.valueOf(groupId));
+                chatView.appendMessageToTab(String.valueOf(groupId), groupText);
                 break;
 
             case GROUP_LIST:
@@ -192,7 +193,30 @@ public class ChatController {
                 break;
 
             case PRIVATE:
-                chatView.displayMessage("[Private from " + msg.getSender() + "]: " + msg.getContent());
+                if (chatView == null) return;
+                String prvSender = msg.getSender();
+                String prvText = msg.getContent();
+                boolean isPrvMe = prvSender.equals(this.username);
+                String dispPrvSender = isPrvMe ? "YOU" : prvSender;
+                String prvTarget = isPrvMe ? msg.getTarget() : prvSender; // where to show it
+
+                // Auto open the tab
+                chatView.ensureTabOpen(prvTarget);
+
+                String formattedPrvText;
+                if (isPrvMe && msg.getMessageId() > 0) {
+                    formattedPrvText = String.format(
+                            "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                            msg.getMessageId(), prvText, msg.getMessageId());
+                } else if (msg.getMessageId() > 0) {
+                    formattedPrvText = String.format(
+                            "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
+                            msg.getMessageId(), dispPrvSender, prvText);
+                } else {
+                    formattedPrvText = String.format("<b>[%s]</b>: %s", dispPrvSender, prvText);
+                }
+
+                chatView.appendMessageToTab(prvTarget, formattedPrvText);
                 break;
 
             case FILE_NOTIFY:
@@ -213,7 +237,12 @@ public class ChatController {
                 if (target.equals("ALL")) {
                     chatView.displayMessage(htmlNotification);
                 } else if (target.matches("\\d+")) {
-                    chatView.displayGroupMessage(Integer.parseInt(target), htmlNotification);
+                    chatView.ensureTabOpen(target);
+                    chatView.appendMessageToTab(target, htmlNotification);
+                } else {
+                    String prvFileTarget = isFileMe ? target : sender_;
+                    chatView.ensureTabOpen(prvFileTarget);
+                    chatView.appendMessageToTab(prvFileTarget, htmlNotification);
                 }
                 break;
 
@@ -227,8 +256,12 @@ public class ChatController {
 
             case HISTORY_RESPONSE:
                 List<Message> pastMessages = msg.getHistoryList();
-                if (pastMessages == null)
+                if (pastMessages == null) {
+                    if (!msg.getTarget().equals("ALL")) {
+                        chatView.setHistoryLoaded(msg.getTarget());
+                    }
                     break;
+                }
 
                 for (Message pastMsg : pastMessages) {
                     String content = pastMsg.getContent();
@@ -253,10 +286,14 @@ public class ChatController {
                         }
                     }
 
-                    if (msg.getTarget().equals("ALL"))
+                    if (msg.getTarget().equals("ALL")) {
                         chatView.displayMessage(histText);
-                    else if (msg.getTarget().matches("\\d+"))
-                        chatView.displayGroupMessage(Integer.parseInt(msg.getTarget()), histText);
+                    } else {
+                        chatView.appendHistoryToTab(msg.getTarget(), histText);
+                    }
+                }
+                if (!msg.getTarget().equals("ALL")) {
+                    chatView.setHistoryLoaded(msg.getTarget());
                 }
                 break;
 
@@ -396,6 +433,11 @@ public class ChatController {
     // called by ChatView when user sends a group message
     public void sendGroupMessage(int groupId, String text) {
         networkService.send(new Message(MessageType.GROUP_MSG, username, String.valueOf(groupId), text));
+    }
+
+    // called by ChatView when user sends a private message
+    public void sendPrivateMessage(String targetUsername, String text) {
+        networkService.send(new Message(MessageType.PRIVATE, username, targetUsername, text));
     }
 
     // called by ChatView to get group members

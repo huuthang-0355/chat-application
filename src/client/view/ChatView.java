@@ -44,8 +44,9 @@ public class ChatView extends JFrame {
     private ChatController controller;
 
     private JTabbedPane tabbedPane;
-    private Map<Integer, JTextPane> groupChatAreas = new HashMap<>(); // groupId -> JTextPane
-    private List<Integer> groupTabIds = new ArrayList<>();
+    private Map<String, JTextPane> chatTabsMap = new HashMap<>(); // targetId -> JTextPane
+    private Map<String, Boolean> historyLoadedMap = new HashMap<>();
+    private Map<String, List<String>> pendingMessagesMap = new HashMap<>();
 
     private JTextPane publicChatArea; // tab 0 - always presnet
     private JTextField inputField;
@@ -103,6 +104,23 @@ public class ChatView extends JFrame {
 
         groupModel = new DefaultListModel<>();
         groupList = new JList<>(groupModel);
+        
+        groupList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = groupList.locationToIndex(e.getPoint());
+                    if (index >= 0) {
+                        String entry = groupModel.getElementAt(index);
+                        int idStart = entry.lastIndexOf('(');
+                        if (idStart != -1) {
+                            String idStr = entry.substring(idStart + 1, entry.length() - 1);
+                            ensureTabOpen(idStr);
+                        }
+                    }
+                }
+            }
+        });
 
         JScrollPane groupListScrollPane = new JScrollPane(groupList);
         userGroupsPanel.add(groupListScrollPane, BorderLayout.CENTER);
@@ -128,6 +146,21 @@ public class ChatView extends JFrame {
         onlineUserlist = new JList<>(userModel);
 
         onlineUserlist.setForeground(Color.GREEN);
+        
+        onlineUserlist.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int index = onlineUserlist.locationToIndex(e.getPoint());
+                    if (index >= 0) {
+                        String username = userModel.getElementAt(index);
+                        if (!username.equals(controller.getUsername())) { 
+                            ensureTabOpen(username);
+                        }
+                    }
+                }
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(onlineUserlist);
         onlineUsersPanel.add(scrollPane, BorderLayout.CENTER);
@@ -204,9 +237,15 @@ public class ChatView extends JFrame {
             if (selectedTab == 0) { // Public Chat tab
                 this.controller.sendMessages(text);
             } else {
-                int groupId = groupTabIds.get(selectedTab - 1);
-
-                controller.sendGroupMessage(groupId, text);
+                java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
+                if (comp instanceof ClosableTabComponent) {
+                    String targetId = ((ClosableTabComponent) comp).getTargetId();
+                    if (targetId.matches("\\d+")) {
+                        controller.sendGroupMessage(Integer.parseInt(targetId), text);
+                    } else {
+                        controller.sendPrivateMessage(targetId, text);
+                    }
+                }
             }
 
             inputField.setText("");
@@ -221,8 +260,12 @@ public class ChatView extends JFrame {
             if (selectedTab == 0)
                 target = "ALL"; // public chat
             else {
-                int groupId = groupTabIds.get(selectedTab - 1);
-                target = String.valueOf(groupId);
+                java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
+                if (comp instanceof ClosableTabComponent) {
+                    target = ((ClosableTabComponent) comp).getTargetId();
+                } else {
+                    return;
+                }
             }
 
             controller.sendFile(target);
@@ -239,9 +282,15 @@ public class ChatView extends JFrame {
             if (selectedTab == 0) { // Public Chat tab
                 this.controller.sendMessages(text);
             } else {
-                int groupId = groupTabIds.get(selectedTab - 1);
-
-                controller.sendGroupMessage(groupId, text);
+                java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
+                if (comp instanceof ClosableTabComponent) {
+                    String targetId = ((ClosableTabComponent) comp).getTargetId();
+                    if (targetId.matches("\\d+")) {
+                        controller.sendGroupMessage(Integer.parseInt(targetId), text);
+                    } else {
+                        controller.sendPrivateMessage(targetId, text);
+                    }
+                }
             }
 
             inputField.setText("");
@@ -255,9 +304,13 @@ public class ChatView extends JFrame {
 
         clearHistoryBtn.addActionListener(e -> {
             int selectedTab = tabbedPane.getSelectedIndex();
-            String target = (selectedTab == 0)
-                    ? "ALL"
-                    : String.valueOf(groupTabIds.get(selectedTab - 1));
+            String target = "ALL";
+            if (selectedTab != 0) {
+                java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
+                if (comp instanceof ClosableTabComponent) {
+                    target = ((ClosableTabComponent) comp).getTargetId();
+                }
+            }
             int confirm = JOptionPane.showConfirmDialog(
                     this,
                     "This will permanently delete all YOUR messages in this conversation.\nThis action cannot be undone.",
@@ -343,7 +396,7 @@ public class ChatView extends JFrame {
         SwingUtilities.invokeLater(() -> {
             replaceMessageHTML(publicChatArea, messageId, sender);
 
-            for (JTextPane area : groupChatAreas.values()) {
+            for (JTextPane area : chatTabsMap.values()) {
                 replaceMessageHTML(area, messageId, sender);
             }
         });
@@ -355,8 +408,7 @@ public class ChatView extends JFrame {
             if (target.equals("ALL")) {
                 pane = publicChatArea;
             } else {
-                int groupId = Integer.parseInt(target);
-                pane = groupChatAreas.get(groupId);
+                pane = chatTabsMap.get(target);
             }
             if (pane != null) {
                 pane.setText("");
@@ -424,29 +476,119 @@ public class ChatView extends JFrame {
         });
     }
 
-    public void displayGroupMessage(int groupId, String text) {
+    public void appendMessageToTab(String targetId, String text) {
         SwingUtilities.invokeLater(() -> {
-            JTextPane area = groupChatAreas.get(groupId);
+            if (historyLoadedMap.containsKey(targetId) && !historyLoadedMap.get(targetId)) {
+                pendingMessagesMap.get(targetId).add(text);
+                return;
+            }
 
+            JTextPane area = chatTabsMap.get(targetId);
             if (area == null)
                 return;
 
-            // area.append(text + "\n");
             appendToPane(area, text);
             area.setCaretPosition(area.getDocument().getLength());
+        });
+    }
+
+    public void appendHistoryToTab(String targetId, String text) {
+        SwingUtilities.invokeLater(() -> {
+            JTextPane area = chatTabsMap.get(targetId);
+            if (area == null) return;
+            appendToPane(area, text);
+            area.setCaretPosition(area.getDocument().getLength());
+        });
+    }
+
+    public void setHistoryLoaded(String targetId) {
+        SwingUtilities.invokeLater(() -> {
+            historyLoadedMap.put(targetId, true);
+            List<String> pending = pendingMessagesMap.get(targetId);
+            if (pending != null && !pending.isEmpty()) {
+                JTextPane area = chatTabsMap.get(targetId);
+                if (area != null) {
+                    for (String msg : pending) {
+                        appendToPane(area, msg);
+                    }
+                    area.setCaretPosition(area.getDocument().getLength());
+                }
+                pending.clear();
+            }
+        });
+    }
+
+    // Old method maintained for compatibility (if needed) but redirected
+    public void displayGroupMessage(int groupId, String text) {
+        appendMessageToTab(String.valueOf(groupId), text);
+    }
+
+    public void ensureTabOpen(String targetId) {
+        if (chatTabsMap.containsKey(targetId)) return;
+        
+        String title = "👤 " + targetId;
+        if (targetId.matches("\\d+")) {
+            for (int i = 0; i < groupModel.getSize(); i++) {
+                String entry = groupModel.getElementAt(i);
+                if (entry.endsWith("(" + targetId + ")")) {
+                    int idStart = entry.lastIndexOf('(');
+                    title = entry.substring(0, idStart).trim();
+                    break;
+                }
+            }
+        }
+        openTab(title, targetId);
+    }
+
+    public void openTab(String title, String targetId) {
+        SwingUtilities.invokeLater(() -> {
+            if (chatTabsMap.containsKey(targetId)) {
+                JTextPane area = chatTabsMap.get(targetId);
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    if (tabbedPane.getComponentAt(i) instanceof JScrollPane) {
+                        JScrollPane scrollPane = (JScrollPane) tabbedPane.getComponentAt(i);
+                        if (scrollPane.getViewport().getView() == area) {
+                            tabbedPane.setSelectedIndex(i);
+                            return;
+                        }
+                    }
+                }
+                return; 
+            }
+
+            JTextPane area = new JTextPane();
+            area.setEditable(false);
+            area.setContentType("text/html");
+
+            area.addHyperlinkListener(e -> {
+                if (e.getEventType() == EventType.ACTIVATED) {
+                    String href = e.getDescription(); 
+                    if (href.startsWith("del:")) {
+                        int messageId = Integer.parseInt(href.split(":")[1]);
+                        controller.deleteMessage(messageId, targetId);
+                    } else {
+                        controller.requestFileDownload(href);
+                    }
+                }
+            });
+
+            JScrollPane scrollPane = new JScrollPane(area);
+            tabbedPane.addTab(title, scrollPane);
+            
+            int index = tabbedPane.getTabCount() - 1;
+            tabbedPane.setTabComponentAt(index, new ClosableTabComponent(title, targetId, this));
+            tabbedPane.setSelectedIndex(index);
+
+            chatTabsMap.put(targetId, area);
+            historyLoadedMap.put(targetId, false);
+            pendingMessagesMap.put(targetId, new java.util.ArrayList<>());
+            controller.loadHistory(targetId, 0);
         });
     }
 
     // groupList = "study:3,game:4"
     public void updateGroupList(String groupList) {
         SwingUtilities.invokeLater(() -> {
-            // revmoe all group tabs, keep tab 0 (Public CHat)
-            while (tabbedPane.getTabCount() > 1) {
-                tabbedPane.remove(1);
-            }
-            groupChatAreas.clear();
-            groupTabIds.clear();
-
             groupModel.clear();
 
             if (groupList == null || groupList.isEmpty())
@@ -458,34 +600,7 @@ public class ChatView extends JFrame {
                 String name = parts[0];
                 int id = Integer.parseInt(parts[1]);
 
-                // create new tab
-                JTextPane area = new JTextPane();
-                area.setEditable(false);
-                area.setContentType("text/html");
-                area.setEditable(false);
-
-                final int currentGroupId = id;
-                area.addHyperlinkListener(e -> {
-                    if (e.getEventType() == EventType.ACTIVATED) {
-                        String href = e.getDescription(); // get href value in <a> tag
-
-                        if (href.startsWith("del:")) {
-                            // format: "del:msgId"
-                            int messageId = Integer.parseInt(href.split(":")[1]);
-                            controller.deleteMessage(messageId, String.valueOf(currentGroupId)); // group target
-                        } else {
-                            controller.requestFileDownload(href);
-                        }
-
-                    }
-                });
-                tabbedPane.addTab(name, new JScrollPane(area));
-                groupChatAreas.put(id, area);
-                groupTabIds.add(id);
-
-                controller.loadHistory(String.valueOf(id), 0); // load history for this group
-
-                // update WEST list
+                // update WEST list (no tabs are automatically opened!)
                 groupModel.addElement("📂 " + name + " (" + id + ")");
             }
         });
@@ -566,5 +681,15 @@ public class ChatView extends JFrame {
         SwingUtilities.invokeLater(() -> {
             new GroupMembersDialog(this, finalGroupName, membersData).setVisible(true);
         });
+    }
+    public void closeTab(ClosableTabComponent tabComponent) {
+        int i = tabbedPane.indexOfTabComponent(tabComponent);
+        if (i != -1) {
+            tabbedPane.remove(i);
+            String targetId = tabComponent.getTargetId();
+            chatTabsMap.remove(targetId);
+            historyLoadedMap.remove(targetId);
+            pendingMessagesMap.remove(targetId);
+        }
     }
 }

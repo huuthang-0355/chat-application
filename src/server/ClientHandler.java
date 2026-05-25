@@ -234,14 +234,20 @@ public class ClientHandler implements Runnable {
                         ClientHandler targetHandler = server.getClientHandlerByUsername(targetUser);
 
                         if (targetHandler != null) {
-                            // send raw data to target user
-                            targetHandler.send(message);
-
                             // save private message into db (with receiver_id)
-                            messageDAO.saveMessage(this.userId, targetHandler.getUserId(), message.getContent());
+                            int prvMsgId = messageDAO.saveMessage(this.userId, targetHandler.getUserId(), message.getContent());
+                            
+                            if (prvMsgId != -1)
+                                message.setMessageId(prvMsgId);
+
+                            // send data to target user
+                            targetHandler.send(message);
+                            
+                            // echo data back to sender to show [YOU]
+                            this.send(message);
                         } else {
                             Message errMsg = new Message(MessageType.ERROR, "SYSTEM", username,
-                                    "User " + targetUser + " is offline or not found.");
+                                    "User " + targetUser + " is offline or not found.", null, null);
                             this.send(errMsg);
                         }
 
@@ -375,16 +381,38 @@ public class ClientHandler implements Runnable {
                             Message notifyMsg = new Message(MessageType.FILE_NOTIFY, this.username, message.getTarget(),
                                     filename, fileId, null);
 
-                            if (message.getTarget().equals("ALL"))
+                            String dbContent = String.format(
+                                    "📎 Shared a file '%s' - <a href='%s:%s'>[Download]</a>",
+                                    filename, fileId, filename);
+
+                            if (message.getTarget().equals("ALL")) {
+                                int savedId = messageDAO.saveMessage(this.userId, null, dbContent);
+                                if (savedId != -1) {
+                                    notifyMsg.setMessageId(savedId);
+                                }
                                 server.broadcast(notifyMsg, this);
-                            else if (message.getTarget().matches("\\d+")) {
+                            } else if (message.getTarget().matches("\\d+")) {
                                 int groupId = Integer.parseInt(message.getTarget());
+                                int savedId = groupDAO.saveGroupMessage(groupId, this.userId, dbContent);
+                                if (savedId != -1) {
+                                    notifyMsg.setMessageId(savedId);
+                                }
                                 server.sendToGroupMembers(groupId, notifyMsg);
+                            } else {
+                                ClientHandler fileTargetHandler = server.getClientHandlerByUsername(message.getTarget());
+                                if (fileTargetHandler != null) {
+                                    int savedId = messageDAO.saveMessage(this.userId, fileTargetHandler.getUserId(), dbContent);
+                                    if (savedId != -1) {
+                                        notifyMsg.setMessageId(savedId);
+                                    }
+                                    fileTargetHandler.send(notifyMsg);
+                                }
+                                this.send(notifyMsg); // also send to self
                             }
 
                         } catch (Exception e) {
                             this.send(new Message(MessageType.ERROR, "SYSTEM", this.username,
-                                    "Failed to save file on server.", null, null));
+                                     "Failed to save file on server.", null, null));
                         }
                         break;
 
@@ -475,6 +503,8 @@ public class ClientHandler implements Runnable {
                             rowsDeleted = messageDAO.recordClearHistory(this.userId, "PUBLIC", "ALL");
                         } else if (clearTarget.matches("\\d+")) {
                             rowsDeleted = messageDAO.recordClearHistory(this.userId, "GROUP", clearTarget);
+                        } else {
+                            rowsDeleted = messageDAO.recordClearHistory(this.userId, "PRIVATE", clearTarget);
                         }
 
                         // send ACK back to the requester only

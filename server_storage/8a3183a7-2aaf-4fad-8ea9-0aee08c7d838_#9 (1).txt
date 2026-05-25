@@ -1,0 +1,270 @@
+Branch indexing
+ > git rev-parse --resolve-git-dir /var/jenkins_home/caches/git-df0c8a0db669f7db814ba16b9770fe69/.git # timeout=10
+Setting origin to https://github.com/huuthang-0355/yas.git
+ > git config remote.origin.url https://github.com/huuthang-0355/yas.git # timeout=10
+Fetching origin...
+Fetching upstream changes from origin
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git config --get remote.origin.url # timeout=10
+using GIT_ASKPASS to set credentials in my-laptop token on github
+ > git fetch --no-tags --force --progress -- origin +refs/heads/*:refs/remotes/origin/* # timeout=10
+Seen branch in repository origin/main
+Seen branch in repository origin/test-scan-branch
+Seen 2 remote branches
+Obtained Jenkinsfile from 9751d20f44666bb447a9e2a2505ad6f5cb0ab6b3
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /var/jenkins_home/workspace/project-01_main
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git
+using credential github_token
+ > git rev-parse --resolve-git-dir /var/jenkins_home/workspace/project-01_main/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/huuthang-0355/yas.git # timeout=10
+Fetching without tags
+Fetching upstream changes from https://github.com/huuthang-0355/yas.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+using GIT_ASKPASS to set credentials in my-laptop token on github
+ > git fetch --no-tags --force --progress -- https://github.com/huuthang-0355/yas.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision 9751d20f44666bb447a9e2a2505ad6f5cb0ab6b3 (main)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 9751d20f44666bb447a9e2a2505ad6f5cb0ab6b3 # timeout=10
+Commit message: "Add test pipeline comment in main method"
+ > git rev-list --no-walk 521cfd616c581c1e5a31b08aec22a79900ece7bd # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] tool
+[Pipeline] tool
+[Pipeline] tool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Tool Install)
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout)
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] checkout
+The recommended git tool is: git
+using credential github_token
+ > git rev-parse --resolve-git-dir /var/jenkins_home/workspace/project-01_main/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/huuthang-0355/yas.git # timeout=10
+Fetching without tags
+Fetching upstream changes from https://github.com/huuthang-0355/yas.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+using GIT_ASKPASS to set credentials in my-laptop token on github
+ > git fetch --no-tags --force --progress -- https://github.com/huuthang-0355/yas.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision 9751d20f44666bb447a9e2a2505ad6f5cb0ab6b3 (main)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 9751d20f44666bb447a9e2a2505ad6f5cb0ab6b3 # timeout=10
+Commit message: "Add test pipeline comment in main method"
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Test & Coverage)
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] echo
+Đang kiểm tra phiên bản Java...
+[Pipeline] sh
++ java -version
+openjdk version "25" 2025-09-16 LTS
+OpenJDK Runtime Environment Temurin-25+36 (build 25+36-LTS)
+OpenJDK 64-Bit Server VM Temurin-25+36 (build 25+36-LTS, mixed mode, sharing)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] fileExists
+[Pipeline] }
+[Pipeline] // script
+Post stage
+[Pipeline] echo
+Upload Test Result và TestCoverage cho Phase Test...
+[Pipeline] junit
+Recording test results
+[Checks API] No suitable checks publisher found.
+[Pipeline] jacoco
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build)
+Stage "Build" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+an exception which occurred:
+	in field com.cloudbees.groovy.cps.impl.BlockScopeEnv.locals
+	in object com.cloudbees.groovy.cps.impl.LoopBlockScopeEnv@56868d61
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@6ac259f5
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@52b6d943
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.LoopBlockScopeEnv@3cf1c3a7
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@237d9fd
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@537d6636
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.LoopBlockScopeEnv@108fc4ce
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@466f12fe
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@2eefee9a
+	in field com.cloudbees.groovy.cps.impl.ProxyEnv.parent
+	in object com.cloudbees.groovy.cps.impl.BlockScopeEnv@31be41e8
+	in field com.cloudbees.groovy.cps.impl.CallEnv.caller
+	in object com.cloudbees.groovy.cps.impl.FunctionCallEnv@47367b2 @WorkflowScript.getChangedServices(WorkflowScript:8)
+	in field com.cloudbees.groovy.cps.Continuable.e
+	in object org.jenkinsci.plugins.workflow.cps.SandboxContinuable@324e293e
+	in field org.jenkinsci.plugins.workflow.cps.CpsThread.program
+	in object Thread #22 @5bd753cc
+	in field org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.threads
+	in object org.jenkinsci.plugins.workflow.cps.CpsThreadGroup@457e1691
+	in object org.jenkinsci.plugins.workflow.cps.CpsThreadGroup@457e1691
+Also:   org.jenkinsci.plugins.workflow.actions.ErrorAction$ErrorId: 1ef42f9e-5f2a-45c4-847f-546f09d8613b
+Caused: java.io.NotSerializableException: hudson.plugins.git.GitChangeSetList
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:278)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.BlockMarshaller.doWriteObject(BlockMarshaller.java:65)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.BlockMarshaller.writeObject(BlockMarshaller.java:56)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.MarshallerObjectOutputStream.writeObjectOverride(MarshallerObjectOutputStream.java:50)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverObjectOutputStream.writeObjectOverride(RiverObjectOutputStream.java:179)
+	at java.base/java.io.ObjectOutputStream.writeObject(Unknown Source)
+	at java.base/java.util.HashMap.internalWriteEntries(Unknown Source)
+	at java.base/java.util.HashMap.writeObject(Unknown Source)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.reflect.SerMethods.callWriteObject(SerMethods.java:69)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.reflect.SerializableClass.callWriteObject(SerializableClass.java:231)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1128)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1119)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.BlockMarshaller.doWriteObject(BlockMarshaller.java:65)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.BlockMarshaller.writeObject(BlockMarshaller.java:56)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.MarshallerObjectOutputStream.writeObjectOverride(MarshallerObjectOutputStream.java:50)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverObjectOutputStream.writeObjectOverride(RiverObjectOutputStream.java:179)
+	at java.base/java.io.ObjectOutputStream.writeObject(Unknown Source)
+	at java.base/java.util.HashMap.internalWriteEntries(Unknown Source)
+	at java.base/java.util.HashMap.writeObject(Unknown Source)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.reflect.SerMethods.callWriteObject(SerMethods.java:69)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.reflect.SerializableClass.callWriteObject(SerializableClass.java:231)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1128)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteFields(RiverMarshaller.java:1182)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteSerializableObject(RiverMarshaller.java:1140)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.river.RiverMarshaller.doWriteObject(RiverMarshaller.java:271)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.AbstractObjectOutput.writeObject(AbstractObjectOutput.java:58)
+	at PluginClassLoader for workflow-support//org.jboss.marshalling.AbstractMarshaller.writeObject(AbstractMarshaller.java:116)
+	at PluginClassLoader for workflow-support//org.jenkinsci.plugins.workflow.support.pickles.serialization.RiverWriter.lambda$writeObject$1(RiverWriter.java:147)
+	at PluginClassLoader for script-security//org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.GroovySandbox.runInSandbox(GroovySandbox.java:329)
+	at PluginClassLoader for workflow-support//org.jenkinsci.plugins.workflow.support.pickles.serialization.RiverWriter.writeObject(RiverWriter.java:146)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.saveProgram(CpsThreadGroup.java:639)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.saveProgram(CpsThreadGroup.java:613)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.saveProgramIfPossible(CpsThreadGroup.java:596)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsThreadGroup.run(CpsThreadGroup.java:520)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsThreadGroup$2.call(CpsThreadGroup.java:372)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsThreadGroup$2.call(CpsThreadGroup.java:302)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsVmExecutorService.lambda$wrap$4(CpsVmExecutorService.java:143)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at hudson.remoting.SingleLaneExecutorService$1.run(SingleLaneExecutorService.java:139)
+	at jenkins.util.ContextResettingExecutorService.lambda$wrap$0(ContextResettingExecutorService.java:26)
+	at jenkins.security.ImpersonatingExecutorService.lambda$wrap$0(ImpersonatingExecutorService.java:66)
+	at jenkins.util.ErrorLoggingExecutorService.lambda$wrap$0(ErrorLoggingExecutorService.java:51)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(Unknown Source)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsVmExecutorService$1.call(CpsVmExecutorService.java:53)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsVmExecutorService$1.call(CpsVmExecutorService.java:50)
+	at org.codehaus.groovy.runtime.GroovyCategorySupport$ThreadCategoryInfo.use(GroovyCategorySupport.java:136)
+	at org.codehaus.groovy.runtime.GroovyCategorySupport.use(GroovyCategorySupport.java:275)
+	at PluginClassLoader for workflow-cps//org.jenkinsci.plugins.workflow.cps.CpsVmExecutorService.lambda$categoryThreadFactory$0(CpsVmExecutorService.java:50)
+	at java.base/java.lang.Thread.run(Unknown Source)
+Finished: FAILURE

@@ -47,10 +47,15 @@ public class MessageDAO {
     public List<Message> getHistory(int user1, int user2, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
-        String sql = "SELECT m.id, u.username as sender, m.content " +
+        String sql = "SELECT m.id, u.username as sender, " +
+                "CASE WHEN m.is_deleted = TRUE THEN '[This message was deleted]' ELSE m.content END as content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)) " +
-                "AND m.is_deleted = FALSE " +
+                "AND m.sent_at > COALESCE(" +
+                "    (SELECT cleared_at FROM user_conversation_clears " +
+                "     WHERE user_id = ? AND conversation_type = 'PRIVATE' AND target_id = (SELECT username FROM users WHERE id = ?)), " +
+                "    '1970-01-01 00:00:00'::timestamp" +
+                ") " +
                 "ORDER BY m.sent_at DESC LIMIT ? OFFSET ?";
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -58,8 +63,10 @@ public class MessageDAO {
             ps.setInt(2, user2);
             ps.setInt(3, user2);
             ps.setInt(4, user1);
-            ps.setInt(5, limit);
-            ps.setInt(6, offset);
+            ps.setInt(5, user1);
+            ps.setInt(6, user2);
+            ps.setInt(7, limit);
+            ps.setInt(8, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -77,10 +84,10 @@ public class MessageDAO {
 
     public List<Message> getPublicHistory(int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
-        String sql = "SELECT m.id, u.username as sender, m.content " +
+        String sql = "SELECT m.id, u.username as sender, " +
+                "CASE WHEN m.is_deleted = TRUE THEN '[This message was deleted]' ELSE m.content END as content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE m.receiver_id IS NULL " +
-                "AND m.is_deleted = FALSE " +
                 "AND m.sent_at > COALESCE(" +
                 "    (SELECT cleared_at FROM user_conversation_clears " +
                 "     WHERE user_id = ? AND conversation_type = 'PUBLIC' AND target_id = 'ALL'), " +

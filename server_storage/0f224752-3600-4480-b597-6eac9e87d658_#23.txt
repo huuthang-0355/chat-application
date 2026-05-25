@@ -1,0 +1,431 @@
+Branch indexing
+ > git rev-parse --resolve-git-dir /var/jenkins_home/caches/git-df0c8a0db669f7db814ba16b9770fe69/.git # timeout=10
+Setting origin to https://github.com/huuthang-0355/yas.git
+ > git config remote.origin.url https://github.com/huuthang-0355/yas.git # timeout=10
+Fetching origin...
+Fetching upstream changes from origin
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git config --get remote.origin.url # timeout=10
+using GIT_ASKPASS to set credentials in my-laptop token on github
+ > git fetch --no-tags --force --progress -- origin +refs/heads/*:refs/remotes/origin/* # timeout=10
+Seen branch in repository origin/main
+Seen branch in repository origin/test-media-branch
+Seen branch in repository origin/test-scan-branch
+Seen branch in repository origin/test/cart-unit-test-coverage
+Seen branch in repository origin/test/media-unit-test-coverage
+Seen branch in repository origin/test/product-unit-test-coverage
+Seen branch in repository origin/test/search-unit-test-coverage
+Seen 7 remote branches
+Obtained Jenkinsfile from 4fff3071244b1b453df8aa6696c7b13e6f583c60
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /var/jenkins_home/workspace/_test_product-unit-test-coverage@2
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: git
+using credential github_token
+ > git rev-parse --resolve-git-dir /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/huuthang-0355/yas.git # timeout=10
+Fetching without tags
+Fetching upstream changes from https://github.com/huuthang-0355/yas.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+using GIT_ASKPASS to set credentials in my-laptop token on github
+ > git fetch --no-tags --force --progress -- https://github.com/huuthang-0355/yas.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision 4fff3071244b1b453df8aa6696c7b13e6f583c60 (test/product-unit-test-coverage)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 4fff3071244b1b453df8aa6696c7b13e6f583c60 # timeout=10
+Commit message: "add unit test"
+ > git rev-list --no-walk 0956944b4ca89c7ec19ffa0f553221af365555fc # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] tool
+[Pipeline] tool
+[Pipeline] tool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Tool Install)
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout)
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] checkout
+The recommended git tool is: git
+using credential github_token
+ > git rev-parse --resolve-git-dir /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/huuthang-0355/yas.git # timeout=10
+Fetching without tags
+Fetching upstream changes from https://github.com/huuthang-0355/yas.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+using GIT_ASKPASS to set credentials in my-laptop token on github
+ > git fetch --no-tags --force --progress -- https://github.com/huuthang-0355/yas.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision 4fff3071244b1b453df8aa6696c7b13e6f583c60 (test/product-unit-test-coverage)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 4fff3071244b1b453df8aa6696c7b13e6f583c60 # timeout=10
+Commit message: "add unit test"
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Test & Coverage)
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] tool
+[Pipeline] envVarsForTool
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] echo
+Đang kiểm tra phiên bản Java...
+[Pipeline] sh
++ java -version
+openjdk version "25" 2025-09-16 LTS
+OpenJDK Runtime Environment Temurin-25+36 (build 25+36-LTS)
+OpenJDK 64-Bit Server VM Temurin-25+36 (build 25+36-LTS, mixed mode, sharing)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ git fetch --no-tags --prune --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+[Pipeline] sh
++ git diff --name-only origin/main...HEAD
+fatal: origin/main...HEAD: no merge base
+[Pipeline] echo
+git diff failed, falling back to changeSets: script returned exit code 128
+[Pipeline] fileExists
+[Pipeline] echo
+Đang chạy Unit Test và tạo report Coverage cho CÁC SERVICE BỊ THAY ĐỔI: [product]
+[Pipeline] sh
++ mvn -pl product -am clean
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/Maven3/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/Maven3/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] yas                                                                [pom]
+[INFO] Common Library                                                     [jar]
+[INFO] product                                                            [jar]
+[INFO] 
+[INFO] ----------------------------< com.yas:yas >-----------------------------
+[INFO] Building yas 1.0-SNAPSHOT                                          [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ yas ---
+[INFO] 
+[INFO] --- flatten:1.6.0:clean (flatten.clean) @ yas ---
+[INFO] Deleting /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/.flattened-pom.xml
+[INFO] 
+[INFO] -----------------------< com.yas:common-library >-----------------------
+[INFO] Building Common Library 1.0-SNAPSHOT                               [2/3]
+[INFO]   from common-library/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ common-library ---
+[INFO] Deleting /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/target
+[INFO] 
+[INFO] --- flatten:1.6.0:clean (flatten.clean) @ common-library ---
+[INFO] Deleting /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/.flattened-pom.xml
+[INFO] 
+[INFO] --------------------------< com.yas:product >---------------------------
+[INFO] Building product 1.0-SNAPSHOT                                      [3/3]
+[INFO]   from product/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ product ---
+[INFO] Deleting /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/target
+[INFO] 
+[INFO] --- flatten:1.6.0:clean (flatten.clean) @ product ---
+[INFO] Deleting /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/.flattened-pom.xml
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for yas 1.0-SNAPSHOT:
+[INFO] 
+[INFO] yas ................................................ SUCCESS [  1.803 s]
+[INFO] Common Library ..................................... SUCCESS [  0.669 s]
+[INFO] product ............................................ SUCCESS [  1.428 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.976 s
+[INFO] Finished at: 2026-04-29T00:54:55Z
+[INFO] ------------------------------------------------------------------------
+[Pipeline] stage
+[Pipeline] { (Test: product)
+[Pipeline] sh
++ mvn test jacoco:report -pl product -am -Dsurefire.excludes=**/*IT.java,**/*IT$*.java,**/ProductCdcConsumerTest.java,**/ProductVectorRepositoryTest.java,**/VectorQueryTest.java
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/Maven3/lib/jansi-2.4.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/var/jenkins_home/tools/hudson.tasks.Maven_MavenInstallation/Maven3/lib/guava-32.0.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] yas                                                                [pom]
+[INFO] Common Library                                                     [jar]
+[INFO] product                                                            [jar]
+[INFO] 
+[INFO] ----------------------------< com.yas:yas >-----------------------------
+[INFO] Building yas 1.0-SNAPSHOT                                          [1/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- flatten:1.6.0:flatten (flatten) @ yas ---
+[INFO] Generating flattened POM of project com.yas:yas:pom:1.0-SNAPSHOT...
+[INFO] 
+[INFO] --- build-helper:3.6.0:add-test-source (add-test-source) @ yas ---
+[INFO] Test Source directory: /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/src/it/java added.
+[INFO] 
+[INFO] --- build-helper:3.6.0:add-test-resource (add-integration-test-resources) @ yas ---
+[INFO] 
+[INFO] --- jacoco:0.8.14:report (default-cli) @ yas ---
+[INFO] Skipping JaCoCo execution due to missing execution data file.
+[INFO] 
+[INFO] -----------------------< com.yas:common-library >-----------------------
+[INFO] Building Common Library 1.0-SNAPSHOT                               [2/3]
+[INFO]   from common-library/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.14:prepare-agent (default) @ common-library ---
+[INFO] argLine set to -javaagent:/var/jenkins_home/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/target/jacoco.exec,excludes=com/yas/**/*Application.class:com/yas/**/config/**:com/yas/**/exception/**:com/yas/**/constants/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ common-library ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- flatten:1.6.0:flatten (flatten) @ common-library ---
+[INFO] Generating flattened POM of project com.yas:common-library:jar:1.0-SNAPSHOT...
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ common-library ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 39 source files with javac [debug parameters release 25] to target/classes
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/kafka/cdc/config/BaseKafkaListenerConfig.java:[56,24] org.springframework.kafka.support.serializer.JsonDeserializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/kafka/cdc/config/BaseKafkaListenerConfig.java:[56,24] org.springframework.kafka.support.serializer.JsonDeserializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/kafka/cdc/config/BaseKafkaListenerConfig.java:[56,24] org.springframework.kafka.support.serializer.JsonDeserializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/kafka/cdc/config/BaseKafkaListenerConfig.java:[56,24] org.springframework.kafka.support.serializer.JsonDeserializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/kafka/cdc/config/BaseKafkaListenerConfig.java:[56,24] org.springframework.kafka.support.serializer.JsonDeserializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/kafka/cdc/config/BaseKafkaListenerConfig.java:[57,36] org.springframework.kafka.support.serializer.JsonDeserializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/csv/CsvExporter.java: /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/csv/CsvExporter.java uses unchecked or unsafe operations.
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/main/java/com/yas/commonlibrary/csv/CsvExporter.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- build-helper:3.6.0:add-test-source (add-test-source) @ common-library ---
+[INFO] Test Source directory: /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java added.
+[INFO] 
+[INFO] --- build-helper:3.6.0:add-test-resource (add-integration-test-resources) @ common-library ---
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ common-library ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] skip non existing resourceDirectory /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ common-library ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug parameters release 25] to target/test-classes
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java/common/kafka/CdcConsumerTest.java:[162,63] org.springframework.kafka.support.serializer.JsonSerializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java/common/kafka/CdcConsumerTest.java:[163,65] org.springframework.kafka.support.serializer.JsonSerializer in org.springframework.kafka.support.serializer has been deprecated and marked for removal
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java/common/kafka/CdcConsumerTest.java: Some input files use or override a deprecated API.
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java/common/kafka/CdcConsumerTest.java: Recompile with -Xlint:deprecation for details.
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java/common/kafka/CdcConsumerTest.java: Some input files use unchecked or unsafe operations.
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/src/it/java/common/kafka/CdcConsumerTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ common-library ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.yas.commonlibrary.csv.CsvExporterTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.266 s -- in com.yas.commonlibrary.csv.CsvExporterTest
+[INFO] Running com.yas.commonlibrary.model.listener.CustomAuditingEntityListenerTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/var/jenkins_home/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.8/byte-buddy-agent-1.17.8.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.06 s -- in com.yas.commonlibrary.model.listener.CustomAuditingEntityListenerTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jacoco:0.8.14:report (default-cli) @ common-library ---
+[INFO] Loading execution data file /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/common-library/target/jacoco.exec
+[INFO] Analyzed bundle 'Common Library' with 9 classes
+[INFO] 
+[INFO] --------------------------< com.yas:product >---------------------------
+[INFO] Building product 1.0-SNAPSHOT                                      [3/3]
+[INFO]   from product/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- jacoco:0.8.14:prepare-agent (default) @ product ---
+[INFO] argLine set to -javaagent:/var/jenkins_home/.m2/repository/org/jacoco/org.jacoco.agent/0.8.14/org.jacoco.agent-0.8.14-runtime.jar=destfile=/var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/target/jacoco.exec,excludes=com/yas/**/*Application.class:com/yas/**/config/**:com/yas/**/exception/**:com/yas/**/constants/**:com/yas/**/mapper/**:com/yas/**/model/**:com/yas/**/dto/**:com/yas/**/viewmodel/**
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ product ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 14 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- flatten:1.6.0:flatten (flatten) @ product ---
+[INFO] Generating flattened POM of project com.yas:product:jar:1.0-SNAPSHOT...
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ product ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 125 source files with javac [debug parameters release 25] to target/classes
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/main/java/com/yas/product/model/attribute/ProductAttribute.java:[41,44] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/main/java/com/yas/product/model/attribute/ProductAttribute.java:[44,41] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 
+[INFO] --- build-helper:3.6.0:add-test-source (add-test-source) @ product ---
+[INFO] Test Source directory: /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/it/java added.
+[INFO] 
+[INFO] --- build-helper:3.6.0:add-test-resource (add-integration-test-resources) @ product ---
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ product ---
+[INFO] Copying 3 resources from src/test/resources to target/test-classes
+[INFO] Copying 2 resources from src/it/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ product ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 37 source files with javac [debug parameters release 25] to target/test-classes
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/MediaServiceTest.java: /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/MediaServiceTest.java uses unchecked or unsafe operations.
+[INFO] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/MediaServiceTest.java: Recompile with -Xlint:unchecked for details.
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[532,40] cannot find symbol
+  symbol:   variable productCaptor
+  location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[533,20] cannot find symbol
+  symbol:   variable productCaptor
+  location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[558,28] cannot find symbol
+  symbol:   method builder()
+  location: class com.yas.product.model.Brand
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[562,56] cannot find symbol
+  symbol:   class ImageVm
+  location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[565,14] cannot find symbol
+  symbol:   class ProductThumbnailVm
+  location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[579,9] cannot find symbol
+  symbol:   method assertThatThrownBy(()->produc[...]Slug))
+  location: class com.yas.product.service.ProductServiceTest
+[INFO] 6 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for yas 1.0-SNAPSHOT:
+[INFO] 
+[INFO] yas ................................................ SUCCESS [  6.409 s]
+[INFO] Common Library ..................................... SUCCESS [ 47.824 s]
+[INFO] product ............................................ FAILURE [ 30.956 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:31 min
+[INFO] Finished at: 2026-04-29T00:56:38Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:testCompile (default-testCompile) on project product: Compilation failure: Compilation failure: 
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[532,40] cannot find symbol
+[ERROR]   symbol:   variable productCaptor
+[ERROR]   location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[533,20] cannot find symbol
+[ERROR]   symbol:   variable productCaptor
+[ERROR]   location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[558,28] cannot find symbol
+[ERROR]   symbol:   method builder()
+[ERROR]   location: class com.yas.product.model.Brand
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[562,56] cannot find symbol
+[ERROR]   symbol:   class ImageVm
+[ERROR]   location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[565,14] cannot find symbol
+[ERROR]   symbol:   class ProductThumbnailVm
+[ERROR]   location: class com.yas.product.service.ProductServiceTest
+[ERROR] /var/jenkins_home/workspace/_test_product-unit-test-coverage@2/product/src/test/java/com/yas/product/service/ProductServiceTest.java:[579,9] cannot find symbol
+[ERROR]   symbol:   method assertThatThrownBy(()->produc[...]Slug))
+[ERROR]   location: class com.yas.product.service.ProductServiceTest
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :product
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // script
+Post stage
+[Pipeline] echo
+Upload Test Result và TestCoverage cho Phase Test...
+[Pipeline] junit
+Recording test results
+[Checks API] No suitable checks publisher found.
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ git fetch --no-tags --prune --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+[Pipeline] sh
++ git diff --name-only origin/main...HEAD
+fatal: origin/main...HEAD: no merge base
+[Pipeline] echo
+git diff failed, falling back to changeSets: script returned exit code 128
+[Pipeline] fileExists
+[Pipeline] jacoco
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build)
+Stage "Build" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 1
+Finished: FAILURE
