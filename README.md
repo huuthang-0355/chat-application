@@ -33,8 +33,9 @@ This project is a Java programming course assignment that builds a fully functio
 - ✅ User registration from the client application, and login after registration.
 - ✅ A user can chat with multiple other online users simultaneously (Public Chat / Broadcast).
 - ✅ Users can create group chats and chat within these groups.
-- 🚧 File transfer capabilities during a chat.
-- 🚧 View personal chat history and delete lines of chat history.
+- ✅ File transfer capabilities during a chat (both group and private).
+- ✅ View personal chat history, clear whole conversations, and delete individual messages (fully persistent across logins).
+- ✅ Elegant Tabbed Interface with closable conversation tabs (double-click online users or groups to open tabs).
 
 *(Optional features not currently required: voice chat, webcam).*
 
@@ -133,14 +134,20 @@ Run `src/client/ClientApp.java` — the login window opens. You can run multiple
 
 ### Connecting
 
-1. Launch `ClientApp`
-2. Enter your **username**, **host** (`localhost`), and **port** (`5000`)
-3. Click **Connect** — the chat window opens automatically
+1. Run `Main.java` (located in `src/`) to launch and activate the server (running on port `5000` by default).
+2. Launch `ClientApp` (you can open multiple instances to simulate different users).
+3. Enter your **username**, **host** (`localhost`), and **port** (`5000`).
+4. Click **Connect** — the chat window opens automatically.
 
 ### Sending Messages
 
-- Type in the input field and press **Enter** or click **Send** to broadcast to everyone
-- Type `/private <username> <message>` to send a private message *(work in progress)*
+- **Public Chat:** Switch to the `Public` tab, type your message in the input field, and press **Enter** or click **Send**.
+- **Group Chat:** Double-click a group in the "My Groups" panel on the left side to open its chat tab, then send messages.
+- **Private Chat:** Double-click any online user in the "Online Users" panel on the right side to open a private conversation tab, then send messages.
+- **File Transfer:** Click the **Send File** button to select a file from your system and upload it to the active tab (Public, Group, or Private).
+- **Close Tabs:** Click the **✖** button next to any group or private tab to close it.
+- **Clear History:** Click the **Clear History** button on the header to clear corresponding tab's contents locally and persistently in the database.
+- **Delete Messages:** Click the **[🗑️]** trash can icon next to your own messages (text or files) to delete them permanently.
 
 ### Disconnecting
 
@@ -162,6 +169,7 @@ Run `src/client/ClientApp.java` — the login window opens. You can run multiple
 │   │   │   └── NetworkService.java      # Owns socket, runs read loop on daemon thread
 │   │   └── view/                        # UI Components and Dialogs
 │   │       ├── ChatView.java            # Main chat window
+│   │       ├── ClosableTabComponent.java # Custom tab rendering with close button
 │   │       ├── CreateGroupDialog.java   
 │   │       ├── GroupMembersDialog.java  
 │   │       ├── JoinGroupDialog.java     
@@ -219,10 +227,12 @@ Run `src/client/ClientApp.java` — the login window opens. You can run multiple
 ### Login Screen
 
 <!-- ![Login Screen](docs/images/login.png) -->
+![Login Screen](./docs/img/loginPage.png)
 
 ### Chat Window
 
 <!-- ![Chat Window](docs/images/chat.png) -->
+![Chat Window](./docs/img/chatPage.png)
 
 ### Demo Video
 
@@ -232,14 +242,15 @@ Run `src/client/ClientApp.java` — the login window opens. You can run multiple
 
 ## Database Schema
 
-The database has 5 tables. Run `schema.sql` to create them.
+The database has 6 tables. Run `schema.sql` to create them.
 
 ```sql
-users          — id, username, password_hash, created_at
-messages       — id, sender_id, receiver_id, content, sent_at, is_deleted
-groups         — id, name, created_by, created_at
-group_members  — group_id, user_id  (composite PK)
-group_messages — id, group_id, sender_id, content, sent_at
+users                    — id, username, password_hash, created_at
+messages                 — id, sender_id, receiver_id, content, sent_at, is_deleted
+groups                   — id, name, created_by, created_at
+group_members            — group_id, user_id  (composite PK)
+group_messages           — id, group_id, sender_id, content, sent_at, is_deleted
+user_conversation_clears — user_id, conversation_type, target_id, cleared_at (composite PK)
 ```
 **ERD Diagram**
 
@@ -259,8 +270,8 @@ This project follows an 11-stage incremental development plan:
 | 4 | Chat Protocol Design | ✅ Done |
 | 5 | Swing GUI Integration | ✅ Done |
 | 6 | Database Integration (PostgreSQL) | ✅ Done |
-| 7 | Authentication (BCrypt) | 🚧 In Progress |
-| 8 | Group Chat | ⬜ Planned |
-| 9 | File Transfer | ⬜ Planned |
-| 10 | Message History | ⬜ Planned |
-| 11 | Code Refactoring & Polish | ⬜ Planned |
+| 7 | Authentication (BCrypt) | ✅ Done |
+| 8 | Group Chat | ✅ Done |
+| 9 | File Transfer | ✅ Done |
+| 10 | Message History | ✅ Done |
+| 11 | Code Refactoring & Polish | ✅ Done |
