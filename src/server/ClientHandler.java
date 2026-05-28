@@ -28,6 +28,11 @@ public class ClientHandler implements Runnable {
     private ObjectInputStream in;
     private ObjectOutputStream out;
     private String username;
+    private String displayName;
+
+    public String getDisplayName() {
+        return displayName;
+    }
 
     private boolean authenticated = false;
     private AuthService authService = new AuthService();
@@ -60,8 +65,9 @@ public class ClientHandler implements Runnable {
     private void handleRegister(Message msg) {
         String usernameAttempt = msg.getSender();
         String password = msg.getContent();
+        String displayNameAttempt = msg.getDisplayName();
 
-        String result = authService.register(usernameAttempt, password);
+        String result = authService.register(usernameAttempt, password, displayNameAttempt);
 
         if (result.equals("OK")) {
             // check whether this user has logged in
@@ -79,6 +85,7 @@ public class ClientHandler implements Runnable {
 
             // save username
             this.username = usernameAttempt;
+            this.displayName = displayNameAttempt;
             this.userId = userDAO.findUserByUsername(this.username);
 
             // sever log
@@ -91,7 +98,8 @@ public class ClientHandler implements Runnable {
                     MessageType.LOGIN_OK,
                     "SYSTEM",
                     this.username,
-                    "Registration successfully! Welcome, " + this.username);
+                    "Registration successfully! Welcome, " + this.displayName);
+            okMessage.setDisplayName(this.displayName);
             send(okMessage);
 
             Message systemMsg = new Message(
@@ -143,6 +151,7 @@ public class ClientHandler implements Runnable {
 
             // save username
             this.username = usernameAttempt;
+            this.displayName = userDAO.getDisplayNameByUsername(this.username);
             this.userId = userDAO.findUserByUsername(this.username);
 
             // sever log
@@ -155,7 +164,8 @@ public class ClientHandler implements Runnable {
                     MessageType.LOGIN_OK,
                     "SYSTEM",
                     this.username,
-                    "Registration successfully! Welcome, " + this.username);
+                    "Registration successfully! Welcome, " + this.displayName);
+            okMessage.setDisplayName(this.displayName);
             send(okMessage);
 
             Message systemMsg = new Message(
@@ -215,6 +225,7 @@ public class ClientHandler implements Runnable {
                 }
 
                 // AUTHENTICATED
+                message.setDisplayName(this.displayName);
                 // 3. route msg basing on TYPE
                 switch (message.getType()) {
                     case MSG:
@@ -329,9 +340,12 @@ public class ClientHandler implements Runnable {
                         // fetch members & online statuses
                         List<String> members = groupDAO.getGroupMembers(grpId);
                         List<String> formatted = new ArrayList<>();
-                        for (String mbr : members) {
-                            boolean isOnline = server.getSessionManager().isOnline(mbr);
-                            formatted.add(mbr + ":" + (isOnline ? "online" : "offline"));
+                        for (String entry : members) {
+                            String[] parts = entry.split(":", 2);
+                            String uname = parts[0];
+                            String disp = parts[1];
+                            boolean isOnline = server.getSessionManager().isOnline(uname);
+                            formatted.add(disp + ":" + (isOnline ? "online" : "offline"));
                         }
 
                         String responseContent = String.join(",", formatted);

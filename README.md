@@ -245,7 +245,7 @@ Run `src/client/ClientApp.java` — the login window opens. You can run multiple
 The database has 6 tables. Run `schema.sql` to create them.
 
 ```sql
-users                    — id, username, password_hash, created_at
+users                    — id, username, password_hash, display_name, created_at
 messages                 — id, sender_id, receiver_id, content, sent_at, is_deleted
 groups                   — id, name, created_by, created_at
 group_members            — group_id, user_id  (composite PK)

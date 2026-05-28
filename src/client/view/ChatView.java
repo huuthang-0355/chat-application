@@ -45,6 +45,7 @@ public class ChatView extends JFrame {
 
     private JTabbedPane tabbedPane;
     private Map<String, JTextPane> chatTabsMap = new HashMap<>(); // targetId -> JTextPane
+    private Map<String, String> userDisplayNameMap = new java.util.HashMap<>();
     private Map<String, Boolean> historyLoadedMap = new HashMap<>();
     private Map<String, List<String>> pendingMessagesMap = new HashMap<>();
 
@@ -146,6 +147,22 @@ public class ChatView extends JFrame {
         onlineUserlist = new JList<>(userModel);
 
         onlineUserlist.setForeground(Color.GREEN);
+
+        onlineUserlist.setCellRenderer(new javax.swing.DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                String entry = value.toString();
+                if (entry.contains(":")) {
+                    String[] parts = entry.split(":", 2);
+                    label.setText("● " + parts[0]);
+                } else {
+                    label.setText(entry);
+                }
+                return label;
+            }
+        });
         
         onlineUserlist.addMouseListener(new MouseAdapter() {
             @Override
@@ -153,9 +170,17 @@ public class ChatView extends JFrame {
                 if (e.getClickCount() == 2) {
                     int index = onlineUserlist.locationToIndex(e.getPoint());
                     if (index >= 0) {
-                        String username = userModel.getElementAt(index);
-                        if (!username.equals(controller.getUsername())) { 
-                            ensureTabOpen(username);
+                        String entry = userModel.getElementAt(index);
+                        if (entry.contains(":")) {
+                            String[] parts = entry.split(":", 2);
+                            String username = parts[1];
+                            if (!username.equals(controller.getUsername())) { 
+                                ensureTabOpen(username);
+                            }
+                        } else {
+                            if (!entry.equals(controller.getUsername())) {
+                                ensureTabOpen(entry);
+                            }
                         }
                     }
                 }
@@ -205,7 +230,7 @@ public class ChatView extends JFrame {
         JPanel topPanel = new JPanel(new BorderLayout());
 
         // Left side: Logged-in Username display
-        JLabel usernameLabel = new JLabel("Logged in as: " + controller.getUsername());
+        JLabel usernameLabel = new JLabel("Logged in as: " + controller.getDisplayName() + " (" + controller.getUsername() + ")");
         usernameLabel.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
         usernameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         usernameLabel.setForeground(Color.GREEN);
@@ -469,9 +494,18 @@ public class ChatView extends JFrame {
     public void updateUserList(String[] onlineUserList) {
         SwingUtilities.invokeLater(() -> {
             userModel.clear();
+            userDisplayNameMap.clear();
 
             for (String onlineUser : onlineUserList) {
-                userModel.addElement(onlineUser);
+                if (onlineUser.contains(":")) {
+                    String[] parts = onlineUser.split(":", 2);
+                    String displayName = parts[0];
+                    String username = parts[1];
+                    userDisplayNameMap.put(username, displayName);
+                    userModel.addElement(onlineUser);
+                } else {
+                    userModel.addElement(onlineUser);
+                }
             }
         });
     }
@@ -535,6 +569,11 @@ public class ChatView extends JFrame {
                     title = entry.substring(0, idStart).trim();
                     break;
                 }
+            }
+        } else {
+            String dispName = userDisplayNameMap.get(targetId);
+            if (dispName != null) {
+                title = "👤 " + dispName;
             }
         }
         openTab(title, targetId);

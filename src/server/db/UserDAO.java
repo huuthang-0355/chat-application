@@ -7,13 +7,14 @@ import java.sql.SQLException;
 
 public class UserDAO {
 
-    public boolean createUser(String username, String passwordHash) {
-        String sql = "INSERT INTO users (username, password_hash) VALUES (?, ?)";
+    public boolean createUser(String username, String passwordHash, String displayName) {
+        String sql = "INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
             ps.setString(2, passwordHash);
+            ps.setString(3, displayName);
 
             int rows = ps.executeUpdate();
             return rows > 0;
@@ -28,6 +29,36 @@ public class UserDAO {
         }
 
         return false;
+    }
+
+    public String getDisplayNameByUsername(String username) {
+        String sql = "SELECT display_name FROM users WHERE username = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getString("display_name");
+            }
+        } catch (SQLException e) {
+            System.out.println("[UserDAO] getDisplayNameByUsername error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public String getDisplayNameById(int id) {
+        String sql = "SELECT display_name FROM users WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getString("display_name");
+            }
+        } catch (SQLException e) {
+            System.out.println("[UserDAO] getDisplayNameById error: " + e.getMessage());
+        }
+        return null;
     }
 
     public String getPasswordHash(String username) {

@@ -182,7 +182,7 @@ public class GroupDAO {
     public List<Message> getGroupHistory(int groupId, int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
-        String sql = "SELECT gm.id, u.username as sender, " +
+        String sql = "SELECT gm.id, u.username as sender, u.display_name as sender_display_name, " +
                 "CASE WHEN gm.is_deleted = TRUE THEN '[This message was deleted]' ELSE gm.content END as content " +
                 "FROM group_messages gm JOIN users u ON gm.sender_id = u.id " +
                 "WHERE gm.group_id = ? " +
@@ -206,6 +206,7 @@ public class GroupDAO {
                     Message msg = new Message(MessageType.GROUP_MSG, rs.getString("sender"), String.valueOf(groupId),
                             rs.getString("content"));
                     msg.setMessageId(rs.getInt("id"));
+                    msg.setDisplayName(rs.getString("sender_display_name"));
                     history.add(msg);
                 }
             }
@@ -235,7 +236,7 @@ public class GroupDAO {
         return false;
     }
     public List<String> getGroupMembers(int groupId) {
-        String sql = "SELECT u.username FROM users u "
+        String sql = "SELECT u.username, u.display_name FROM users u "
                    + "JOIN group_members gm ON u.id = gm.user_id "
                    + "WHERE gm.group_id = ? "
                    + "ORDER BY u.username ASC";
@@ -245,7 +246,7 @@ public class GroupDAO {
             ps.setInt(1, groupId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    members.add(rs.getString("username"));
+                    members.add(rs.getString("username") + ":" + rs.getString("display_name"));
                 }
             }
         } catch (SQLException e) {

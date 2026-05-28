@@ -6,9 +6,12 @@ public class AuthService {
 
     private UserDAO userDAO = new UserDAO();
 
-    public String register(String username, String password) {
+    public String register(String username, String password, String displayName) {
         if (username == null || username.isEmpty())
             return "Username cannot be empty";
+
+        if (displayName == null || displayName.trim().isEmpty())
+            return "Display name cannot be empty";
 
         if (password.length() < 4)
             return "Password too short";
@@ -18,7 +21,7 @@ public class AuthService {
             return "Username already taken";
 
         String passwordHash = PasswordUtils.hashPassword(password);
-        boolean success = userDAO.createUser(username, passwordHash);
+        boolean success = userDAO.createUser(username, passwordHash, displayName);
 
         if (success)
             return "OK";

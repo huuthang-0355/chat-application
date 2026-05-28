@@ -15,6 +15,7 @@ public class Message implements Serializable {
     private String sender;
     private String target;
     private String content;
+    private String displayName;
 
     private String fileId;
     private String filename;
@@ -88,6 +89,14 @@ public class Message implements Serializable {
 
     public String getFilename() {
         return filename;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     @Override

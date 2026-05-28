@@ -23,6 +23,8 @@ public class LoginView extends JFrame {
     private JPasswordField passwordField;
     private JTextField hostField;
     private JTextField portField;
+    private JTextField displayNameField;
+    private JLabel displayNameLabel;
     private JLabel statusLabel;
     private JRadioButton registerRadioBtn;
     private JRadioButton loginRadioBtn;
@@ -63,9 +65,23 @@ public class LoginView extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5); // padding
 
-        // Username row
+        // Display Name row (initially hidden, placed at the top)
         gbc.gridx = 0;
         gbc.gridy = 0;
+        gbc.weightx = 0.4;
+        displayNameLabel = new JLabel("Display Name:");
+        displayNameLabel.setVisible(false);
+        formPanel.add(displayNameLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.6;
+        displayNameField = new JTextField(20);
+        displayNameField.setVisible(false);
+        formPanel.add(displayNameField, gbc);
+
+        // Username row
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         gbc.weightx = 0.4;
         formPanel.add(new JLabel("Username:"), gbc);
 
@@ -76,7 +92,7 @@ public class LoginView extends JFrame {
 
         // Password row
         gbc.gridx = 0;
-        gbc.gridy = 1;
+        gbc.gridy = 2;
         gbc.weightx = 0.4;
         formPanel.add(new JLabel("Password: "), gbc);
 
@@ -87,7 +103,7 @@ public class LoginView extends JFrame {
 
         // Host row
         gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         gbc.weightx = 0.4;
         formPanel.add(new JLabel("Host:"), gbc);
 
@@ -98,7 +114,7 @@ public class LoginView extends JFrame {
 
         // Port row
         gbc.gridx = 0;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.weightx = 0.4;
         formPanel.add(new JLabel("Port:"), gbc);
 
@@ -106,6 +122,21 @@ public class LoginView extends JFrame {
         gbc.weightx = 0.6;
         portField = new JTextField("5000", 20);
         formPanel.add(portField, gbc);
+
+        // Radio button listeners to dynamically show/hide the display name row
+        loginRadioBtn.addActionListener(e -> {
+            displayNameLabel.setVisible(false);
+            displayNameField.setVisible(false);
+            this.revalidate();
+            this.repaint();
+        });
+
+        registerRadioBtn.addActionListener(e -> {
+            displayNameLabel.setVisible(true);
+            displayNameField.setVisible(true);
+            this.revalidate();
+            this.repaint();
+        });
 
         // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
@@ -130,7 +161,6 @@ public class LoginView extends JFrame {
 
         connectBtn.addActionListener(e -> {
             statusLabel.setText("Connecting...");
-            // connectBtn.setEnabled(false);
 
             String user = usernameField.getText().trim();
             char[] passChars = passwordField.getPassword();
@@ -138,6 +168,12 @@ public class LoginView extends JFrame {
             Arrays.fill(passChars, '\0');
 
             boolean isRegister = registerRadioBtn.isSelected();
+            String displayName = displayNameField.getText().trim();
+
+            if (isRegister && displayName.isEmpty()) {
+                statusLabel.setText("Display name cannot be empty");
+                return;
+            }
 
             String host = hostField.getText().trim();
             int port = Integer.parseInt(portField.getText());
@@ -145,7 +181,7 @@ public class LoginView extends JFrame {
             // socket connection is a BLOCKING operation --> bring it to seperate thread.
             // if not, the UI will be 'Treo' during waiting for connection period.
             new Thread(() -> {
-                controller.connect(user, password, isRegister, host, port, this);
+                controller.connect(user, password, displayName, isRegister, host, port, this);
             }).start();
 
         });

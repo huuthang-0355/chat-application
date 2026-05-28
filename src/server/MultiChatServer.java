@@ -66,8 +66,17 @@ public class MultiChatServer {
 
     public void broadcastUserList() {
         List<String> onlineUsernameList = sessionManager.getOnlineUsernames();
+        List<String> list = new java.util.ArrayList<>();
+        for (String uname : onlineUsernameList) {
+            ClientHandler handler = sessionManager.getHandler(uname);
+            if (handler != null) {
+                list.add(handler.getDisplayName() + ":" + uname);
+            } else {
+                list.add(uname + ":" + uname);
+            }
+        }
 
-        String userListStr = String.join(",", onlineUsernameList);
+        String userListStr = String.join(",", list);
 
         Message userListMsg = new Message(MessageType.USER_LIST, "SYSTEM", "ALL", userListStr);
 

@@ -47,7 +47,7 @@ public class MessageDAO {
     public List<Message> getHistory(int user1, int user2, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
-        String sql = "SELECT m.id, u.username as sender, " +
+        String sql = "SELECT m.id, u.username as sender, u.display_name as sender_display_name, " +
                 "CASE WHEN m.is_deleted = TRUE THEN '[This message was deleted]' ELSE m.content END as content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)) " +
@@ -73,6 +73,7 @@ public class MessageDAO {
                     Message msg = new Message(MessageType.MSG, rs.getString("sender"), String.valueOf(user2),
                             rs.getString("content"));
                     msg.setMessageId(rs.getInt("id"));
+                    msg.setDisplayName(rs.getString("sender_display_name"));
                     history.add(msg);
                 }
             }
@@ -84,7 +85,7 @@ public class MessageDAO {
 
     public List<Message> getPublicHistory(int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
-        String sql = "SELECT m.id, u.username as sender, " +
+        String sql = "SELECT m.id, u.username as sender, u.display_name as sender_display_name, " +
                 "CASE WHEN m.is_deleted = TRUE THEN '[This message was deleted]' ELSE m.content END as content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE m.receiver_id IS NULL " +
@@ -105,6 +106,7 @@ public class MessageDAO {
                     Message msg = new Message(MessageType.MSG, rs.getString("sender"), null,
                             rs.getString("content"));
                     msg.setMessageId(rs.getInt("id"));
+                    msg.setDisplayName(rs.getString("sender_display_name"));
                     history.add(msg);
 
                 }

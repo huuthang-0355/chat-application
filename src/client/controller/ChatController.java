@@ -20,14 +20,19 @@ public class ChatController {
     private ChatView chatView;
     private NetworkService networkService;
     private String username;
+    private String displayName;
     private LoginView loginView;
 
     private String pendingUserList = null; // online users buffer for initial login
 
     private String pendingGroupList = null; // group list users belongs to for initial login
 
+    public String getDisplayName() {
+        return displayName;
+    }
+
     // called by LoginView
-    public void connect(String username, String password, boolean isRegister, String host, int port,
+    public void connect(String username, String password, String displayName, boolean isRegister, String host, int port,
             LoginView loginView) {
         try {
 
@@ -38,6 +43,7 @@ public class ChatController {
             }
 
             this.username = username;
+            this.displayName = displayName;
             this.loginView = loginView;
 
             // create a new thread to read msg
@@ -46,7 +52,9 @@ public class ChatController {
 
             // send either REGISTER or LOGIN
             MessageType authType = isRegister ? MessageType.REGISTER : MessageType.LOGIN;
-            networkService.send(new Message(authType, username, "ALL", password));
+            Message req = new Message(authType, username, "ALL", password);
+            req.setDisplayName(displayName);
+            networkService.send(req);
 
         } catch (IOException e) {
             loginView.setStatus("Connection error: " + e.getMessage());
@@ -74,6 +82,7 @@ public class ChatController {
         switch (msg.getType()) {
             case LOGIN_OK: // auth succeed -> open ChatView
                 this.username = msg.getTarget();
+                this.displayName = msg.getDisplayName();
 
                 SwingUtilities.invokeLater(() -> {
                     loginView.dispose();
@@ -110,7 +119,7 @@ public class ChatController {
                 String sender = msg.getSender();
                 String text;
                 boolean isMe = sender.equals(this.username);
-                String displaySender = isMe ? "YOU" : sender;
+                String displaySender = isMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : sender);
 
                 if (isMe && msg.getMessageId() > 0) {
                     // Your message with a valid DB id - show delete button
@@ -160,7 +169,7 @@ public class ChatController {
                 String _sender = msg.getSender();
                 String groupText;
                 boolean _isMe = _sender.equals(this.username);
-                String _displaySender = _isMe ? "YOU" : _sender;
+                String _displaySender = _isMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : _sender);
 
                 if (_isMe && msg.getMessageId() > 0) {
                     groupText = String.format(
@@ -197,7 +206,7 @@ public class ChatController {
                 String prvSender = msg.getSender();
                 String prvText = msg.getContent();
                 boolean isPrvMe = prvSender.equals(this.username);
-                String dispPrvSender = isPrvMe ? "YOU" : prvSender;
+                String dispPrvSender = isPrvMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : prvSender);
                 String prvTarget = isPrvMe ? msg.getTarget() : prvSender; // where to show it
 
                 // Auto open the tab
@@ -226,7 +235,7 @@ public class ChatController {
 
                 boolean isFileMe = sender_.equals(this.username);
                 String fAlign = isFileMe ? "right" : "left";
-                String dispFileSender = isFileMe ? "YOU" : sender_;
+                String dispFileSender = isFileMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : sender_);
 
                 // build clickable HTML link with proper alignment
                 String htmlNotification = String.format(
@@ -267,7 +276,7 @@ public class ChatController {
                     String content = pastMsg.getContent();
                     String histText;
                     boolean isPastMe = pastMsg.getSender().equals(this.username);
-                    String dispSender = isPastMe ? "YOU" : pastMsg.getSender();
+                    String dispSender = isPastMe ? "YOU" : (pastMsg.getDisplayName() != null ? pastMsg.getDisplayName() : pastMsg.getSender());
                     String align = isPastMe ? "right" : "left";
 
                     if (content.equals("[This message was deleted]")) {
@@ -277,7 +286,7 @@ public class ChatController {
                     } else {
                         if (isPastMe) {
                             histText = String.format(
-                                    "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                                     "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
                                     pastMsg.getMessageId(), content, pastMsg.getMessageId());
                         } else {
                             histText = String.format(
