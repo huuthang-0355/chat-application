@@ -205,11 +205,38 @@ public class ChatView extends JFrame {
         inputPanel.add(inputScrollPane, BorderLayout.CENTER);
 
         JPanel sendBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JButton emojiBtn = new JButton("😊");
+        emojiBtn.setToolTipText("Insert an emoji");
         enterToSendCheckbox = new JCheckBox("Enter to Send", true);
         JButton sendBtn = new JButton("Send");
         JButton sendFileBtn = new JButton("📎");
         sendFileBtn.setToolTipText("Send a file");
 
+        // Create Emoji popup menu in a grid layout for rich aesthetics
+        JPopupMenu emojiMenu = new JPopupMenu();
+        emojiMenu.setLayout(new java.awt.GridLayout(2, 5));
+        String[] emojis = { "😊", "😂", "😍", "😢", "👍", "😮", "💖", "👏", "🎉", "🔥" };
+        for (String emoji : emojis) {
+            JButton btn = new JButton(emoji);
+            btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+            btn.setMargin(new java.awt.Insets(0, 0, 0, 0));
+            btn.setBorder(BorderFactory.createEmptyBorder());
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            btn.setFocusPainted(false);
+            btn.setPreferredSize(new Dimension(32, 32));
+            btn.addActionListener(ev -> {
+                inputField.insert(emoji, inputField.getCaretPosition());
+                inputField.requestFocus();
+                emojiMenu.setVisible(false);
+            });
+            emojiMenu.add(btn);
+        }
+        emojiBtn.addActionListener(e -> {
+            emojiMenu.show(emojiBtn, 0, -emojiMenu.getPreferredSize().height);
+        });
+
+        sendBtnPanel.add(emojiBtn);
         sendBtnPanel.add(enterToSendCheckbox);
         sendBtnPanel.add(sendBtn);
         sendBtnPanel.add(sendFileBtn);
