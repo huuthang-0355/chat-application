@@ -18,6 +18,7 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -50,7 +51,8 @@ public class ChatView extends JFrame {
     private Map<String, List<String>> pendingMessagesMap = new HashMap<>();
 
     private JTextPane publicChatArea; // tab 0 - always presnet
-    private JTextField inputField;
+    private JTextArea inputField;
+    private JCheckBox enterToSendCheckbox;
 
     private DefaultListModel<String> userModel;
     private JList<String> onlineUserlist;
@@ -105,7 +107,7 @@ public class ChatView extends JFrame {
 
         groupModel = new DefaultListModel<>();
         groupList = new JList<>(groupModel);
-        
+
         groupList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -151,8 +153,9 @@ public class ChatView extends JFrame {
         onlineUserlist.setCellRenderer(new javax.swing.DefaultListCellRenderer() {
             @Override
             public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                          boolean isSelected, boolean cellHasFocus) {
-                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                    boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected,
+                        cellHasFocus);
                 String entry = value.toString();
                 if (entry.contains(":")) {
                     String[] parts = entry.split(":", 2);
@@ -163,7 +166,7 @@ public class ChatView extends JFrame {
                 return label;
             }
         });
-        
+
         onlineUserlist.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -174,7 +177,7 @@ public class ChatView extends JFrame {
                         if (entry.contains(":")) {
                             String[] parts = entry.split(":", 2);
                             String username = parts[1];
-                            if (!username.equals(controller.getUsername())) { 
+                            if (!username.equals(controller.getUsername())) {
                                 ensureTabOpen(username);
                             }
                         } else {
@@ -194,14 +197,20 @@ public class ChatView extends JFrame {
 
         // input area
         JPanel inputPanel = new JPanel(new BorderLayout());
-        inputField = new JTextField();
-        inputPanel.add(inputField, BorderLayout.CENTER);
+        inputField = new JTextArea(2, 30);
+        inputField.setLineWrap(true);
+        inputField.setWrapStyleWord(true);
+        JScrollPane inputScrollPane = new JScrollPane(inputField);
+        inputScrollPane.setPreferredSize(new Dimension(0, 45));
+        inputPanel.add(inputScrollPane, BorderLayout.CENTER);
 
         JPanel sendBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        enterToSendCheckbox = new JCheckBox("Enter to Send", true);
         JButton sendBtn = new JButton("Send");
         JButton sendFileBtn = new JButton("📎");
         sendFileBtn.setToolTipText("Send a file");
 
+        sendBtnPanel.add(enterToSendCheckbox);
         sendBtnPanel.add(sendBtn);
         sendBtnPanel.add(sendFileBtn);
         inputPanel.add(sendBtnPanel, BorderLayout.EAST);
@@ -230,10 +239,10 @@ public class ChatView extends JFrame {
         JPanel topPanel = new JPanel(new BorderLayout());
 
         // Left side: Logged-in Username display
-        JLabel usernameLabel = new JLabel("Logged in as: " + controller.getDisplayName() + " (" + controller.getUsername() + ")");
+        JLabel usernameLabel = new JLabel(controller.getDisplayName() + " ("
+                + controller.getUsername() + ") | Server: " + controller.getHost() + ":" + controller.getPort());
         usernameLabel.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
         usernameLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-        usernameLabel.setForeground(Color.GREEN);
         topPanel.add(usernameLabel, BorderLayout.WEST);
 
         // Right side: Controls
@@ -253,28 +262,7 @@ public class ChatView extends JFrame {
 
         // click 'Send' btn
         sendBtn.addActionListener(e -> {
-            String text = inputField.getText();
-            if (text.isEmpty())
-                return;
-
-            // read the active tab to decide routing
-            int selectedTab = tabbedPane.getSelectedIndex();
-            if (selectedTab == 0) { // Public Chat tab
-                this.controller.sendMessages(text);
-            } else {
-                java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
-                if (comp instanceof ClosableTabComponent) {
-                    String targetId = ((ClosableTabComponent) comp).getTargetId();
-                    if (targetId.matches("\\d+")) {
-                        controller.sendGroupMessage(Integer.parseInt(targetId), text);
-                    } else {
-                        controller.sendPrivateMessage(targetId, text);
-                    }
-                }
-            }
-
-            inputField.setText("");
-            inputField.requestFocus();
+            sendMessageAction();
         });
 
         // click "🔗" to send file
@@ -296,30 +284,19 @@ public class ChatView extends JFrame {
             controller.sendFile(target);
         });
 
-        // press 'Enter' in input field
-        inputField.addActionListener(e -> {
-            String text = inputField.getText();
-            if (text.isEmpty())
-                return;
-
-            // read the active tab to decide routing
-            int selectedTab = tabbedPane.getSelectedIndex();
-            if (selectedTab == 0) { // Public Chat tab
-                this.controller.sendMessages(text);
-            } else {
-                java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
-                if (comp instanceof ClosableTabComponent) {
-                    String targetId = ((ClosableTabComponent) comp).getTargetId();
-                    if (targetId.matches("\\d+")) {
-                        controller.sendGroupMessage(Integer.parseInt(targetId), text);
-                    } else {
-                        controller.sendPrivateMessage(targetId, text);
+        // Intercept enter key in JTextArea
+        inputField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    if (enterToSendCheckbox.isSelected()) {
+                        if (!e.isShiftDown()) {
+                            e.consume(); // prevent inserting a newline
+                            sendMessageAction();
+                        }
                     }
                 }
             }
-
-            inputField.setText("");
-            inputField.requestFocus();
         });
 
         // Quit Button
@@ -529,7 +506,8 @@ public class ChatView extends JFrame {
     public void appendHistoryToTab(String targetId, String text) {
         SwingUtilities.invokeLater(() -> {
             JTextPane area = chatTabsMap.get(targetId);
-            if (area == null) return;
+            if (area == null)
+                return;
             appendToPane(area, text);
             area.setCaretPosition(area.getDocument().getLength());
         });
@@ -558,8 +536,9 @@ public class ChatView extends JFrame {
     }
 
     public void ensureTabOpen(String targetId) {
-        if (chatTabsMap.containsKey(targetId)) return;
-        
+        if (chatTabsMap.containsKey(targetId))
+            return;
+
         String title = "👤 " + targetId;
         if (targetId.matches("\\d+")) {
             for (int i = 0; i < groupModel.getSize(); i++) {
@@ -592,7 +571,7 @@ public class ChatView extends JFrame {
                         }
                     }
                 }
-                return; 
+                return;
             }
 
             JTextPane area = new JTextPane();
@@ -601,7 +580,7 @@ public class ChatView extends JFrame {
 
             area.addHyperlinkListener(e -> {
                 if (e.getEventType() == EventType.ACTIVATED) {
-                    String href = e.getDescription(); 
+                    String href = e.getDescription();
                     if (href.startsWith("del:")) {
                         int messageId = Integer.parseInt(href.split(":")[1]);
                         controller.deleteMessage(messageId, targetId);
@@ -613,7 +592,7 @@ public class ChatView extends JFrame {
 
             JScrollPane scrollPane = new JScrollPane(area);
             tabbedPane.addTab(title, scrollPane);
-            
+
             int index = tabbedPane.getTabCount() - 1;
             tabbedPane.setTabComponentAt(index, new ClosableTabComponent(title, targetId, this));
             tabbedPane.setSelectedIndex(index);
@@ -721,6 +700,7 @@ public class ChatView extends JFrame {
             new GroupMembersDialog(this, finalGroupName, membersData).setVisible(true);
         });
     }
+
     public void closeTab(ClosableTabComponent tabComponent) {
         int i = tabbedPane.indexOfTabComponent(tabComponent);
         if (i != -1) {
@@ -730,5 +710,30 @@ public class ChatView extends JFrame {
             historyLoadedMap.remove(targetId);
             pendingMessagesMap.remove(targetId);
         }
+    }
+
+    private void sendMessageAction() {
+        String text = inputField.getText();
+        if (text == null || text.trim().isEmpty())
+            return;
+
+        // read the active tab to decide routing
+        int selectedTab = tabbedPane.getSelectedIndex();
+        if (selectedTab == 0) { // Public Chat tab
+            this.controller.sendMessages(text);
+        } else {
+            java.awt.Component comp = tabbedPane.getTabComponentAt(selectedTab);
+            if (comp instanceof ClosableTabComponent) {
+                String targetId = ((ClosableTabComponent) comp).getTargetId();
+                if (targetId.matches("\\d+")) {
+                    controller.sendGroupMessage(Integer.parseInt(targetId), text);
+                } else {
+                    controller.sendPrivateMessage(targetId, text);
+                }
+            }
+        }
+
+        inputField.setText("");
+        inputField.requestFocus();
     }
 }

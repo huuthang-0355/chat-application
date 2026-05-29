@@ -22,6 +22,8 @@ public class ChatController {
     private String username;
     private String displayName;
     private LoginView loginView;
+    private String host;
+    private int port;
 
     private String pendingUserList = null; // online users buffer for initial login
 
@@ -29,6 +31,14 @@ public class ChatController {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     // called by LoginView
@@ -45,6 +55,8 @@ public class ChatController {
             this.username = username;
             this.displayName = displayName;
             this.loginView = loginView;
+            this.host = host;
+            this.port = port;
 
             // create a new thread to read msg
             networkService = new NetworkService(host, port, this);
@@ -120,20 +132,21 @@ public class ChatController {
                 String text;
                 boolean isMe = sender.equals(this.username);
                 String displaySender = isMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : sender);
+                String cleanContent = msg.getContent() != null ? msg.getContent().replace("\n", "<br/>") : "";
 
                 if (isMe && msg.getMessageId() > 0) {
                     // Your message with a valid DB id - show delete button
                     text = String.format(
                             "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
-                            msg.getMessageId(), msg.getContent(), msg.getMessageId());
+                            msg.getMessageId(), cleanContent, msg.getMessageId());
                 } else if (msg.getMessageId() > 0) {
                     // Someone else's message with a valid DB id
                     text = String.format(
                             "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
-                            msg.getMessageId(), displaySender, msg.getContent());
+                            msg.getMessageId(), displaySender, cleanContent);
                 } else {
                     // System message or no ID — no delete button, still show YOU if applicable
-                    text = String.format("<b>[%s]</b>: %s", displaySender, msg.getContent());
+                    text = String.format("<b>[%s]</b>: %s", displaySender, cleanContent);
                 }
 
                 chatView.displayMessage(text);
@@ -170,17 +183,18 @@ public class ChatController {
                 String groupText;
                 boolean _isMe = _sender.equals(this.username);
                 String _displaySender = _isMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : _sender);
+                String cleanGroupContent = msg.getContent() != null ? msg.getContent().replace("\n", "<br/>") : "";
 
                 if (_isMe && msg.getMessageId() > 0) {
                     groupText = String.format(
                             "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
-                            msg.getMessageId(), msg.getContent(), msg.getMessageId());
+                            msg.getMessageId(), cleanGroupContent, msg.getMessageId());
                 } else if (msg.getMessageId() > 0) {
                     groupText = String.format(
                             "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
-                            msg.getMessageId(), _displaySender, msg.getContent());
+                            msg.getMessageId(), _displaySender, cleanGroupContent);
                 } else {
-                    groupText = String.format("<b>[%s]</b>: %s", _displaySender, msg.getContent());
+                    groupText = String.format("<b>[%s]</b>: %s", _displaySender, cleanGroupContent);
                 }
 
                 chatView.ensureTabOpen(String.valueOf(groupId));
@@ -208,6 +222,7 @@ public class ChatController {
                 boolean isPrvMe = prvSender.equals(this.username);
                 String dispPrvSender = isPrvMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : prvSender);
                 String prvTarget = isPrvMe ? msg.getTarget() : prvSender; // where to show it
+                String cleanPrvContent = prvText != null ? prvText.replace("\n", "<br/>") : "";
 
                 // Auto open the tab
                 chatView.ensureTabOpen(prvTarget);
@@ -216,13 +231,13 @@ public class ChatController {
                 if (isPrvMe && msg.getMessageId() > 0) {
                     formattedPrvText = String.format(
                             "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
-                            msg.getMessageId(), prvText, msg.getMessageId());
+                            msg.getMessageId(), cleanPrvContent, msg.getMessageId());
                 } else if (msg.getMessageId() > 0) {
                     formattedPrvText = String.format(
                             "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
-                            msg.getMessageId(), dispPrvSender, prvText);
+                            msg.getMessageId(), dispPrvSender, cleanPrvContent);
                 } else {
-                    formattedPrvText = String.format("<b>[%s]</b>: %s", dispPrvSender, prvText);
+                    formattedPrvText = String.format("<b>[%s]</b>: %s", dispPrvSender, cleanPrvContent);
                 }
 
                 chatView.appendMessageToTab(prvTarget, formattedPrvText);
@@ -267,7 +282,7 @@ public class ChatController {
                 List<Message> pastMessages = msg.getHistoryList();
                 if (pastMessages == null) {
                     if (!msg.getTarget().equals("ALL")) {
-                        chatView.setHistoryLoaded(msg.getTarget());
+                         chatView.setHistoryLoaded(msg.getTarget());
                     }
                     break;
                 }
@@ -278,6 +293,7 @@ public class ChatController {
                     boolean isPastMe = pastMsg.getSender().equals(this.username);
                     String dispSender = isPastMe ? "YOU" : (pastMsg.getDisplayName() != null ? pastMsg.getDisplayName() : pastMsg.getSender());
                     String align = isPastMe ? "right" : "left";
+                    String cleanPastContent = content != null ? content.replace("\n", "<br/>") : "";
 
                     if (content.equals("[This message was deleted]")) {
                         histText = String.format(
@@ -287,11 +303,11 @@ public class ChatController {
                         if (isPastMe) {
                             histText = String.format(
                                      "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
-                                    pastMsg.getMessageId(), content, pastMsg.getMessageId());
+                                    pastMsg.getMessageId(), cleanPastContent, pastMsg.getMessageId());
                         } else {
                             histText = String.format(
                                     "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
-                                    pastMsg.getMessageId(), dispSender, content);
+                                    pastMsg.getMessageId(), dispSender, cleanPastContent);
                         }
                     }
 

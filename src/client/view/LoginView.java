@@ -12,6 +12,9 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
 
 import client.controller.ChatController;
 
@@ -24,6 +27,7 @@ public class LoginView extends JFrame {
     private JTextField hostField;
     private JTextField portField;
     private JTextField displayNameField;
+    private JComboBox<client.config.ServerConfigManager.ServerItem> serverCombo;
     private JLabel displayNameLabel;
     private JLabel statusLabel;
     private JRadioButton registerRadioBtn;
@@ -101,9 +105,25 @@ public class LoginView extends JFrame {
         passwordField = new JPasswordField(20);
         formPanel.add(passwordField, gbc);
 
-        // Host row
+        // Server Select Combo row
         gbc.gridx = 0;
         gbc.gridy = 3;
+        gbc.weightx = 0.4;
+        formPanel.add(new JLabel("Server Bookmark:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.6;
+        java.util.List<client.config.ServerConfigManager.ServerItem> savedServers = client.config.ServerConfigManager.loadServers();
+        DefaultComboBoxModel<client.config.ServerConfigManager.ServerItem> comboModel = new DefaultComboBoxModel<>();
+        for (client.config.ServerConfigManager.ServerItem item : savedServers) {
+            comboModel.addElement(item);
+        }
+        serverCombo = new JComboBox<>(comboModel);
+        formPanel.add(serverCombo, gbc);
+
+        // Host row
+        gbc.gridx = 0;
+        gbc.gridy = 4;
         gbc.weightx = 0.4;
         formPanel.add(new JLabel("Host:"), gbc);
 
@@ -114,7 +134,7 @@ public class LoginView extends JFrame {
 
         // Port row
         gbc.gridx = 0;
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         gbc.weightx = 0.4;
         formPanel.add(new JLabel("Port:"), gbc);
 
@@ -122,6 +142,111 @@ public class LoginView extends JFrame {
         gbc.weightx = 0.6;
         portField = new JTextField("5000", 20);
         formPanel.add(portField, gbc);
+
+        // Server list buttons row
+        JPanel serverButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        JButton addServerBtn = new JButton("Add Bookmark");
+        JButton updateServerBtn = new JButton("Update");
+        JButton deleteServerBtn = new JButton("Delete");
+        serverButtonsPanel.add(addServerBtn);
+        serverButtonsPanel.add(updateServerBtn);
+        serverButtonsPanel.add(deleteServerBtn);
+
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        formPanel.add(serverButtonsPanel, gbc);
+        gbc.gridwidth = 1; // reset
+
+        // Wire Combobox selection loader
+        serverCombo.addActionListener(e -> {
+            client.config.ServerConfigManager.ServerItem selected = (client.config.ServerConfigManager.ServerItem) serverCombo.getSelectedItem();
+            if (selected != null) {
+                hostField.setText(selected.host);
+                portField.setText(String.valueOf(selected.port));
+            }
+        });
+
+        // Initialize connection text boxes with first saved server details
+        if (serverCombo.getItemCount() > 0) {
+            serverCombo.setSelectedIndex(0);
+            client.config.ServerConfigManager.ServerItem selected = serverCombo.getItemAt(0);
+            hostField.setText(selected.host);
+            portField.setText(String.valueOf(selected.port));
+        }
+
+        // Add Bookmark logic
+        addServerBtn.addActionListener(e -> {
+            String name = JOptionPane.showInputDialog(this, "Enter Server Bookmark Name:", "Add Server Connection", JOptionPane.QUESTION_MESSAGE);
+            if (name != null && !name.trim().isEmpty()) {
+                String host = hostField.getText().trim();
+                int port = 5000;
+                try {
+                    port = Integer.parseInt(portField.getText().trim());
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid Port number", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                client.config.ServerConfigManager.ServerItem newItem = new client.config.ServerConfigManager.ServerItem(name.trim(), host, port);
+                comboModel.addElement(newItem);
+                serverCombo.setSelectedItem(newItem);
+                
+                // save list
+                java.util.List<client.config.ServerConfigManager.ServerItem> list = new java.util.ArrayList<>();
+                for (int i = 0; i < comboModel.getSize(); i++) {
+                    list.add(comboModel.getElementAt(i));
+                }
+                client.config.ServerConfigManager.saveServers(list);
+            }
+        });
+
+        // Update selected bookmark
+        updateServerBtn.addActionListener(e -> {
+            client.config.ServerConfigManager.ServerItem selected = (client.config.ServerConfigManager.ServerItem) serverCombo.getSelectedItem();
+            if (selected != null) {
+                String host = hostField.getText().trim();
+                int port = 5000;
+                try {
+                    port = Integer.parseInt(portField.getText().trim());
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid Port number", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                selected.host = host;
+                selected.port = port;
+                serverCombo.repaint();
+                
+                // save list
+                java.util.List<client.config.ServerConfigManager.ServerItem> list = new java.util.ArrayList<>();
+                for (int i = 0; i < comboModel.getSize(); i++) {
+                    list.add(comboModel.getElementAt(i));
+                }
+                client.config.ServerConfigManager.saveServers(list);
+                JOptionPane.showMessageDialog(this, "Server configuration updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        // Delete selected bookmark
+        deleteServerBtn.addActionListener(e -> {
+            client.config.ServerConfigManager.ServerItem selected = (client.config.ServerConfigManager.ServerItem) serverCombo.getSelectedItem();
+            if (selected != null) {
+                if (comboModel.getSize() <= 1) {
+                    JOptionPane.showMessageDialog(this, "Cannot delete the last server bookmark.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                comboModel.removeElement(selected);
+                
+                // save list
+                java.util.List<client.config.ServerConfigManager.ServerItem> list = new java.util.ArrayList<>();
+                for (int i = 0; i < comboModel.getSize(); i++) {
+                    list.add(comboModel.getElementAt(i));
+                }
+                client.config.ServerConfigManager.saveServers(list);
+                
+                // load first element
+                serverCombo.setSelectedIndex(0);
+            }
+        });
 
         // Radio button listeners to dynamically show/hide the display name row
         loginRadioBtn.addActionListener(e -> {
