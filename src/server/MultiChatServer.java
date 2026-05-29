@@ -27,17 +27,52 @@ public class MultiChatServer {
     private GroupDAO groupDAO = new GroupDAO();
     private UserDAO userDAO = new UserDAO();
 
+    private ServerSocket serverSocket;
+    private volatile boolean isRunning = false;
+    private server.view.ServerListener listener;
+
+    public void setListener(server.view.ServerListener listener) {
+        this.listener = listener;
+    }
+
+    public server.view.ServerListener getListener() {
+        return this.listener;
+    }
+
+    public boolean isRunning() {
+        return this.isRunning;
+    }
+
+    public void log(String message) {
+        System.out.println(message);
+        if (listener != null) {
+            listener.onLogMessage(message);
+        }
+    }
+
     public MultiChatServer(int port) {
         this.port = port;
     }
 
     public void startServer() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("[SYSTEM]: Server is running on port " + port);
+        this.isRunning = true;
+        try {
+            serverSocket = new ServerSocket(port);
+            log("[SYSTEM]: Server is running on port " + port);
+            if (listener != null) {
+                listener.onServerStarted();
+            }
 
             // infinite loop for only waiting users
-            while (true) {
+            while (isRunning) {
                 Socket socket = serverSocket.accept();
+                
+                if (!isRunning) {
+                    if (socket != null && !socket.isClosed()) {
+                        socket.close();
+                    }
+                    break;
+                }
 
                 // new user enter --> create handler
                 ClientHandler clientHandler = new ClientHandler(socket, this);
@@ -46,14 +81,49 @@ public class MultiChatServer {
                 // submit task for executor to handle
                 executor.submit(clientHandler);
 
-                System.out
-                        .println("[SYSTEM]: New client connected. Serving " + clients.size() + " clients");
+                log("[SYSTEM]: New client connected. Serving " + clients.size() + " clients");
             }
         } catch (IOException e) {
-            System.out.println("[SEVER-ERROR]: " + e.getMessage());
+            if (isRunning) {
+                log("[SERVER-ERROR]: " + e.getMessage());
+            } else {
+                log("[SYSTEM]: Server stopped gracefully.");
+            }
         } finally {
-            executor.shutdown();
+            cleanup();
         }
+    }
+
+    private void cleanup() {
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            log("[SERVER-ERROR] Error closing server socket: " + e.getMessage());
+        }
+        executor.shutdown();
+        if (listener != null) {
+            listener.onServerStopped();
+        }
+    }
+
+    public void stopServer() {
+        this.isRunning = false;
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            System.out.println("[SERVER-ERROR] Error closing server socket: " + e.getMessage());
+        }
+        // close all active connections
+        for (ClientHandler client : clients) {
+            client.closeConnection();
+        }
+        clients.clear();
+        executor.shutdownNow();
+        executor = Executors.newCachedThreadPool(); // recreate for potential next start
     }
 
     // receive msg and sender, send msg to other clients (not sender)

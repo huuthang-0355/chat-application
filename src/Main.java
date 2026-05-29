@@ -1,13 +1,10 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-
-import server.MultiChatServer;
+import javax.swing.SwingUtilities;
+import server.view.ServerView;
 
 public class Main {
     public static void main(String[] args) {
-
-        MultiChatServer server = new MultiChatServer(5000);
-
-        server.startServer();
+        SwingUtilities.invokeLater(() -> {
+            new ServerView().setVisible(true);
+        });
     }
 }

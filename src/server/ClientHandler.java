@@ -89,7 +89,10 @@ public class ClientHandler implements Runnable {
             this.userId = userDAO.findUserByUsername(this.username);
 
             // sever log
-            System.out.println("[SERVER-LOG]: " + this.username + " has connected.");
+            server.log("[SERVER-LOG]: " + this.username + " has connected.");
+            if (server.getListener() != null) {
+                server.getListener().onClientConnected(this.username, this.displayName, clientSocket.getInetAddress().getHostAddress());
+            }
 
             // automatically login when registering successfully
             this.authenticated = true;
@@ -155,7 +158,10 @@ public class ClientHandler implements Runnable {
             this.userId = userDAO.findUserByUsername(this.username);
 
             // sever log
-            System.out.println("[SERVER-LOG]: " + this.username + " has connected.");
+            server.log("[SERVER-LOG]: " + this.username + " has connected.");
+            if (server.getListener() != null) {
+                server.getListener().onClientConnected(this.username, this.displayName, clientSocket.getInetAddress().getHostAddress());
+            }
 
             // save db for loggin
             this.authenticated = true;
@@ -555,6 +561,9 @@ public class ClientHandler implements Runnable {
             // remove user from session manager
             if (authenticated && username != null) {
                 server.getSessionManager().removeSession(username);
+                if (server.getListener() != null) {
+                    server.getListener().onClientDisconnected(this.username);
+                }
 
                 // informing user has left the room
                 Message leaveMsg = new Message(MessageType.MSG, "SYSTEM", "ALL", this.username + " has left the room.");
@@ -606,6 +615,16 @@ public class ClientHandler implements Runnable {
 
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    public void closeConnection() {
+        try {
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
+            }
+        } catch (IOException e) {
+            System.out.println("[ClientHandler] Error closing socket: " + e.getMessage());
+        }
     }
 
 }
