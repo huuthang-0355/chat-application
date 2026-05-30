@@ -470,9 +470,11 @@ public class ChatView extends JFrame {
                 HTMLDocument doc = (HTMLDocument) pane.getDocument();
                 HTMLEditorKit kit = (HTMLEditorKit) pane.getEditorKit();
 
-                // // only accpet <a> tag
-                // if (msg.contains("<a href="))
-                // safeMsg = msg;
+                // Prevent duplicate rendering: check if element with same id already exists
+                String idStr = extractElementId(msg);
+                if (idStr != null && hasElementWithId(doc, idStr)) {
+                    return; // Skip duplicate message
+                }
 
                 kit.insertHTML(doc, doc.getLength(), "<div>" + msg + "</div>", 0, 0, null);
                 pane.setCaretPosition(doc.getLength());
@@ -481,6 +483,25 @@ public class ChatView extends JFrame {
                 e.printStackTrace();
             }
         });
+    }
+
+    private boolean hasElementWithId(HTMLDocument doc, String id) {
+        Element root = doc.getDefaultRootElement();
+        return checkElementForId(root, id);
+    }
+
+    private boolean checkElementForId(Element elem, String id) {
+        Object idAttr = elem.getAttributes().getAttribute(javax.swing.text.html.HTML.Attribute.ID);
+        if (idAttr != null && idAttr.toString().equals(id)) {
+            return true;
+        }
+        int childCount = elem.getElementCount();
+        for (int i = 0; i < childCount; i++) {
+            if (checkElementForId(elem.getElement(i), id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // controller call this func when having new messages from background thread
@@ -541,20 +562,45 @@ public class ChatView extends JFrame {
     }
 
     public void setHistoryLoaded(String targetId) {
+        setHistoryLoaded(targetId, new java.util.HashSet<>());
+    }
+
+    public void setHistoryLoaded(String targetId, java.util.Set<String> renderedElementIds) {
         SwingUtilities.invokeLater(() -> {
             historyLoadedMap.put(targetId, true);
             List<String> pending = pendingMessagesMap.get(targetId);
             if (pending != null && !pending.isEmpty()) {
                 JTextPane area = chatTabsMap.get(targetId);
                 if (area != null) {
-                    for (String msg : pending) {
-                        appendToPane(area, msg);
+                    for (String pendingMsg : pending) {
+                        // Skip messages/files whose IDs were already rendered from history
+                        if (!renderedElementIds.isEmpty()) {
+                            String idStr = extractElementId(pendingMsg);
+                            if (idStr != null && renderedElementIds.contains(idStr)) {
+                                continue; // already shown, skip
+                            }
+                        }
+                        appendToPane(area, pendingMsg);
                     }
                     area.setCaretPosition(area.getDocument().getLength());
                 }
                 pending.clear();
             }
         });
+    }
+
+    // Extract element id from HTML string (e.g. id='msg-123' -> "msg-123", id='file-abc' -> "file-abc")
+    private String extractElementId(String msg) {
+        if (msg.contains("id='")) {
+            int start = msg.indexOf("id='") + 4;
+            int end = msg.indexOf("'", start);
+            if (end > start) return msg.substring(start, end);
+        } else if (msg.contains("id=\"")) {
+            int start = msg.indexOf("id=\"") + 4;
+            int end = msg.indexOf("\"", start);
+            if (end > start) return msg.substring(start, end);
+        }
+        return null;
     }
 
     // Old method maintained for compatibility (if needed) but redirected

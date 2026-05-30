@@ -252,10 +252,10 @@ public class ChatController {
                 String fAlign = isFileMe ? "right" : "left";
                 String dispFileSender = isFileMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : sender_);
 
-                // build clickable HTML link with proper alignment
+                // build clickable HTML link with unique id to prevent duplicate display
                 String htmlNotification = String.format(
-                        "<div align='%s' style='text-align: %s;'><b>[%s]</b>: 📎 Shared a file '%s' - <a href='%s:%s'>[Download]</a></div>",
-                        fAlign, fAlign, dispFileSender, fname, fid, fname);
+                        "<div id='file-%s' align='%s' style='text-align: %s;'><b>[%s]</b>: \uD83D\uDCCE Shared a file '%s' - <a href='%s:%s'>[Download]</a></div>",
+                        fid, fAlign, fAlign, dispFileSender, fname, fid, fname);
 
                 String target = msg.getTarget();
                 if (target.equals("ALL")) {
@@ -287,6 +287,8 @@ public class ChatController {
                     break;
                 }
 
+                java.util.Set<String> renderedIds = new java.util.HashSet<>();
+
                 for (Message pastMsg : pastMessages) {
                     String content = pastMsg.getContent();
                     String histText;
@@ -295,10 +297,34 @@ public class ChatController {
                     String align = isPastMe ? "right" : "left";
                     String cleanPastContent = content != null ? content.replace("\n", "<br/>") : "";
 
+                    // Detect file messages: content stored as "📎 Shared a file '...' - <a href='fileId:filename'>..."
+                    String fileIdFromHistory = null;
+                    if (content != null && content.contains("Shared a file") && content.contains("<a href='")) {
+                        // extract fileId from href='fileId:filename'
+                        int hrefStart = content.indexOf("<a href='") + 9;
+                        int hrefEnd = content.indexOf(":", hrefStart);
+                        if (hrefEnd > hrefStart) {
+                            fileIdFromHistory = content.substring(hrefStart, hrefEnd);
+                        }
+                    }
+
                     if (content.equals("[This message was deleted]")) {
                         histText = String.format(
                                 "<div id='msg-%d' align='%s' style='text-align: %s;'><b>[%s]</b>: <i>%s</i></div>",
                                 pastMsg.getMessageId(), align, align, dispSender, content);
+                        renderedIds.add("msg-" + pastMsg.getMessageId());
+                    } else if (fileIdFromHistory != null) {
+                        // File message: use id='file-{fileId}' to match real-time FILE_NOTIFY element ID
+                        if (isPastMe) {
+                            histText = String.format(
+                                    "<div id='file-%s' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                                    fileIdFromHistory, cleanPastContent, pastMsg.getMessageId());
+                        } else {
+                            histText = String.format(
+                                    "<div id='file-%s' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
+                                    fileIdFromHistory, dispSender, cleanPastContent);
+                        }
+                        renderedIds.add("file-" + fileIdFromHistory);
                     } else {
                         if (isPastMe) {
                             histText = String.format(
@@ -309,6 +335,7 @@ public class ChatController {
                                     "<div id='msg-%d' align='left' style='text-align: left;'><b>[%s]</b>: %s</div>",
                                     pastMsg.getMessageId(), dispSender, cleanPastContent);
                         }
+                        renderedIds.add("msg-" + pastMsg.getMessageId());
                     }
 
                     if (msg.getTarget().equals("ALL")) {
@@ -318,7 +345,7 @@ public class ChatController {
                     }
                 }
                 if (!msg.getTarget().equals("ALL")) {
-                    chatView.setHistoryLoaded(msg.getTarget());
+                    chatView.setHistoryLoaded(msg.getTarget(), renderedIds);
                 }
                 break;
 

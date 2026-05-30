@@ -400,6 +400,7 @@ public class ClientHandler implements Runnable {
                             // broadcast notificatio to clients (no bytes)
                             Message notifyMsg = new Message(MessageType.FILE_NOTIFY, this.username, message.getTarget(),
                                     filename, fileId, null);
+                            notifyMsg.setDisplayName(this.displayName);
 
                             String dbContent = String.format(
                                     "📎 Shared a file '%s' - <a href='%s:%s'>[Download]</a>",
