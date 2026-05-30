@@ -432,6 +432,22 @@ public class ChatController {
         System.exit(0);
     }
 
+    public void logout() {
+        if (networkService != null) {
+            networkService.send(new Message(MessageType.LOGOUT, username, "ALL", ""));
+            networkService.disconnect();
+            networkService = null;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            if (chatView != null) {
+                chatView.dispose();
+                chatView = null;
+            }
+            new LoginView().setVisible(true);
+        });
+    }
+
     public String getUsername() {
         return this.username;
     }

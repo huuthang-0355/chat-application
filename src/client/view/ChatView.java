@@ -275,9 +275,9 @@ public class ChatView extends JFrame {
         // Right side: Controls
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton clearHistoryBtn = new JButton("Clear History");
-        JButton quitBtn = new JButton("QUIT");
+        JButton logoutBtn = new JButton("Log out");
         btnPanel.add(clearHistoryBtn);
-        btnPanel.add(quitBtn);
+        btnPanel.add(logoutBtn);
         topPanel.add(btnPanel, BorderLayout.EAST);
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
@@ -326,9 +326,9 @@ public class ChatView extends JFrame {
             }
         });
 
-        // Quit Button
-        quitBtn.addActionListener(e -> {
-            this.controller.disconnect();
+        // Log out Button
+        logoutBtn.addActionListener(e -> {
+            this.controller.logout();
         });
 
         clearHistoryBtn.addActionListener(e -> {
