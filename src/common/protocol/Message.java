@@ -20,6 +20,7 @@ public class Message implements Serializable {
     private String fileId;
     private String filename;
     private byte[] fileData; // for file transfer
+    private String timestamp;
 
     public Message(MessageType type, String sender, String target, String content) {
         this.type = type;
@@ -97,6 +98,14 @@ public class Message implements Serializable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override

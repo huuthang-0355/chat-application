@@ -39,7 +39,7 @@ public class LoginView extends JFrame {
         controller = new ChatController();
 
         setTitle("Chatting Login");
-        setSize(600, 400);
+        setSize(800, 520);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // align center
 

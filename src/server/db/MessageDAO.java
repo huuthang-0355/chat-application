@@ -47,7 +47,7 @@ public class MessageDAO {
     public List<Message> getHistory(int user1, int user2, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
-        String sql = "SELECT m.id, u.username as sender, u.display_name as sender_display_name, " +
+        String sql = "SELECT m.id, u.username as sender, u.display_name as sender_display_name, m.sent_at, " +
                 "CASE WHEN m.is_deleted = TRUE THEN '[This message was deleted]' ELSE m.content END as content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)) " +
@@ -67,13 +67,17 @@ public class MessageDAO {
             ps.setInt(6, user2);
             ps.setInt(7, limit);
             ps.setInt(8, offset);
-
+ 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Message msg = new Message(MessageType.MSG, rs.getString("sender"), String.valueOf(user2),
                             rs.getString("content"));
                     msg.setMessageId(rs.getInt("id"));
                     msg.setDisplayName(rs.getString("sender_display_name"));
+                    java.sql.Timestamp sentAt = rs.getTimestamp("sent_at");
+                    if (sentAt != null) {
+                        msg.setTimestamp(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(sentAt));
+                    }
                     history.add(msg);
                 }
             }
@@ -85,7 +89,7 @@ public class MessageDAO {
 
     public List<Message> getPublicHistory(int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
-        String sql = "SELECT m.id, u.username as sender, u.display_name as sender_display_name, " +
+        String sql = "SELECT m.id, u.username as sender, u.display_name as sender_display_name, m.sent_at, " +
                 "CASE WHEN m.is_deleted = TRUE THEN '[This message was deleted]' ELSE m.content END as content " +
                 "FROM messages m JOIN users u ON m.sender_id = u.id " +
                 "WHERE m.receiver_id IS NULL " +
@@ -107,6 +111,10 @@ public class MessageDAO {
                             rs.getString("content"));
                     msg.setMessageId(rs.getInt("id"));
                     msg.setDisplayName(rs.getString("sender_display_name"));
+                    java.sql.Timestamp sentAt = rs.getTimestamp("sent_at");
+                    if (sentAt != null) {
+                        msg.setTimestamp(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(sentAt));
+                    }
                     history.add(msg);
 
                 }

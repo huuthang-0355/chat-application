@@ -67,7 +67,7 @@ public class ChatView extends JFrame {
     public ChatView(ChatController controller) {
         this.controller = controller;
         setTitle("Chat Room");
-        setSize(750, 500);
+        setSize(1100, 720);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 

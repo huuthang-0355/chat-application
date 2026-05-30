@@ -149,6 +149,13 @@ public class ChatController {
                     text = String.format("<b>[%s]</b>: %s", displaySender, cleanContent);
                 }
 
+                String align = isMe ? "right" : "left";
+                String timeStr = getSmartTimestamp(msg.getTimestamp());
+                String timeDiv = String.format(
+                        "<div align='%s' style='text-align: %s; margin-top: 2px;'><font color='#666666' size='2'><i>%s</i></font></div>",
+                        align, align, timeStr);
+                text += timeDiv;
+
                 chatView.displayMessage(text);
                 break;
 
@@ -197,6 +204,13 @@ public class ChatController {
                     groupText = String.format("<b>[%s]</b>: %s", _displaySender, cleanGroupContent);
                 }
 
+                String _align = _isMe ? "right" : "left";
+                String _timeStr = getSmartTimestamp(msg.getTimestamp());
+                String _timeDiv = String.format(
+                        "<div align='%s' style='text-align: %s; margin-top: 2px;'><font color='#666666' size='2'><i>%s</i></font></div>",
+                        _align, _align, _timeStr);
+                groupText += _timeDiv;
+
                 chatView.ensureTabOpen(String.valueOf(groupId));
                 chatView.appendMessageToTab(String.valueOf(groupId), groupText);
                 break;
@@ -216,11 +230,13 @@ public class ChatController {
                 break;
 
             case PRIVATE:
-                if (chatView == null) return;
+                if (chatView == null)
+                    return;
                 String prvSender = msg.getSender();
                 String prvText = msg.getContent();
                 boolean isPrvMe = prvSender.equals(this.username);
-                String dispPrvSender = isPrvMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : prvSender);
+                String dispPrvSender = isPrvMe ? "YOU"
+                        : (msg.getDisplayName() != null ? msg.getDisplayName() : prvSender);
                 String prvTarget = isPrvMe ? msg.getTarget() : prvSender; // where to show it
                 String cleanPrvContent = prvText != null ? prvText.replace("\n", "<br/>") : "";
 
@@ -240,6 +256,13 @@ public class ChatController {
                     formattedPrvText = String.format("<b>[%s]</b>: %s", dispPrvSender, cleanPrvContent);
                 }
 
+                String prvAlign = isPrvMe ? "right" : "left";
+                String prvTimeStr = getSmartTimestamp(msg.getTimestamp());
+                String prvTimeDiv = String.format(
+                        "<div align='%s' style='text-align: %s; margin-top: 2px;'><font color='#666666' size='2'><i>%s</i></font></div>",
+                        prvAlign, prvAlign, prvTimeStr);
+                formattedPrvText += prvTimeDiv;
+
                 chatView.appendMessageToTab(prvTarget, formattedPrvText);
                 break;
 
@@ -250,12 +273,19 @@ public class ChatController {
 
                 boolean isFileMe = sender_.equals(this.username);
                 String fAlign = isFileMe ? "right" : "left";
-                String dispFileSender = isFileMe ? "YOU" : (msg.getDisplayName() != null ? msg.getDisplayName() : sender_);
+                String dispFileSender = isFileMe ? "YOU"
+                        : (msg.getDisplayName() != null ? msg.getDisplayName() : sender_);
 
                 // build clickable HTML link with unique id to prevent duplicate display
                 String htmlNotification = String.format(
                         "<div id='file-%s' align='%s' style='text-align: %s;'><b>[%s]</b>: \uD83D\uDCCE Shared a file '%s' - <a href='%s:%s'>[Download]</a></div>",
                         fid, fAlign, fAlign, dispFileSender, fname, fid, fname);
+
+                String fTimeStr = getSmartTimestamp(msg.getTimestamp());
+                String fTimeDiv = String.format(
+                        "<div align='%s' style='text-align: %s; margin-top: 2px;'><font color='#666666' size='2'><i>%s</i></font></div>",
+                        fAlign, fAlign, fTimeStr);
+                htmlNotification += fTimeDiv;
 
                 String target = msg.getTarget();
                 if (target.equals("ALL")) {
@@ -282,7 +312,7 @@ public class ChatController {
                 List<Message> pastMessages = msg.getHistoryList();
                 if (pastMessages == null) {
                     if (!msg.getTarget().equals("ALL")) {
-                         chatView.setHistoryLoaded(msg.getTarget());
+                        chatView.setHistoryLoaded(msg.getTarget());
                     }
                     break;
                 }
@@ -293,11 +323,13 @@ public class ChatController {
                     String content = pastMsg.getContent();
                     String histText;
                     boolean isPastMe = pastMsg.getSender().equals(this.username);
-                    String dispSender = isPastMe ? "YOU" : (pastMsg.getDisplayName() != null ? pastMsg.getDisplayName() : pastMsg.getSender());
-                    String align = isPastMe ? "right" : "left";
+                    String dispSender = isPastMe ? "YOU"
+                            : (pastMsg.getDisplayName() != null ? pastMsg.getDisplayName() : pastMsg.getSender());
+                    String histAlign = isPastMe ? "right" : "left";
                     String cleanPastContent = content != null ? content.replace("\n", "<br/>") : "";
-
-                    // Detect file messages: content stored as "📎 Shared a file '...' - <a href='fileId:filename'>..."
+ 
+                    // Detect file messages: content stored as "📎 Shared a file '...' - <a
+                    // href='fileId:filename'>..."
                     String fileIdFromHistory = null;
                     if (content != null && content.contains("Shared a file") && content.contains("<a href='")) {
                         // extract fileId from href='fileId:filename'
@@ -307,14 +339,15 @@ public class ChatController {
                             fileIdFromHistory = content.substring(hrefStart, hrefEnd);
                         }
                     }
-
+ 
                     if (content.equals("[This message was deleted]")) {
                         histText = String.format(
                                 "<div id='msg-%d' align='%s' style='text-align: %s;'><b>[%s]</b>: <i>%s</i></div>",
-                                pastMsg.getMessageId(), align, align, dispSender, content);
+                                pastMsg.getMessageId(), histAlign, histAlign, dispSender, content);
                         renderedIds.add("msg-" + pastMsg.getMessageId());
                     } else if (fileIdFromHistory != null) {
-                        // File message: use id='file-{fileId}' to match real-time FILE_NOTIFY element ID
+                        // File message: use id='file-{fileId}' to match real-time FILE_NOTIFY element
+                        // ID
                         if (isPastMe) {
                             histText = String.format(
                                     "<div id='file-%s' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
@@ -328,7 +361,7 @@ public class ChatController {
                     } else {
                         if (isPastMe) {
                             histText = String.format(
-                                     "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
+                                    "<div id='msg-%d' align='right' style='text-align: right;'><b>[YOU]</b>: %s <a href='del:%d'>[🗑️]</a></div>",
                                     pastMsg.getMessageId(), cleanPastContent, pastMsg.getMessageId());
                         } else {
                             histText = String.format(
@@ -337,6 +370,12 @@ public class ChatController {
                         }
                         renderedIds.add("msg-" + pastMsg.getMessageId());
                     }
+ 
+                    String histTimeStr = getSmartTimestamp(pastMsg.getTimestamp());
+                    String histTimeDiv = String.format(
+                            "<div align='%s' style='text-align: %s; margin-top: 2px;'><font color='#666666' size='2'><i>%s</i></font></div>",
+                            histAlign, histAlign, histTimeStr);
+                    histText += histTimeDiv;
 
                     if (msg.getTarget().equals("ALL")) {
                         chatView.displayMessage(histText);
@@ -424,7 +463,8 @@ public class ChatController {
                 // send object
                 networkService.send(uploadMsg);
 
-                // No local redundant notification here as the server-confirmed FILE_NOTIFY will handle it.
+                // No local redundant notification here as the server-confirmed FILE_NOTIFY will
+                // handle it.
             } catch (IOException ex) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
                         "Failed to read file: " + ex.getMessage(),
@@ -486,5 +526,45 @@ public class ChatController {
     public void requestGroupMembers(int groupId) {
         Message req = new Message(MessageType.GROUP_MEMBERS, this.username, String.valueOf(groupId), "");
         networkService.send(req);
+    }
+
+    private String getSmartTimestamp(String dbTimestampStr) {
+        try {
+            java.util.Date msgDate;
+            if (dbTimestampStr == null || dbTimestampStr.trim().isEmpty()) {
+                msgDate = new java.util.Date(); // real-time, use now
+            } else {
+                // dbTimestampStr is formatted as "yyyy-MM-dd HH:mm:ss"
+                java.text.SimpleDateFormat dbFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                msgDate = dbFormat.parse(dbTimestampStr);
+            }
+
+            // check if today
+            java.util.Calendar today = java.util.Calendar.getInstance();
+            java.util.Calendar msgCal = java.util.Calendar.getInstance();
+            msgCal.setTime(msgDate);
+
+            boolean isToday = today.get(java.util.Calendar.YEAR) == msgCal.get(java.util.Calendar.YEAR)
+                    && today.get(java.util.Calendar.DAY_OF_YEAR) == msgCal.get(java.util.Calendar.DAY_OF_YEAR);
+
+            boolean isThisYear = today.get(java.util.Calendar.YEAR) == msgCal.get(java.util.Calendar.YEAR);
+
+            if (isToday) {
+                // Format: 12h: "10:45 AM"
+                java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("hh:mm a");
+                return timeFormat.format(msgDate);
+            } else if (isThisYear) {
+                // Format: "29/05 10:45 AM"
+                java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("dd/MM hh:mm a");
+                return dateFormat.format(msgDate);
+            } else {
+                // Format: "29/05/2025 10:45 AM"
+                java.text.SimpleDateFormat fullFormat = new java.text.SimpleDateFormat("dd/MM/yyyy hh:mm a");
+                return fullFormat.format(msgDate);
+            }
+        } catch (Exception e) {
+            // fallback in case of parsing error
+            return dbTimestampStr != null ? dbTimestampStr : "";
+        }
     }
 }

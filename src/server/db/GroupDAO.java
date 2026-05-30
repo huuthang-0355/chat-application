@@ -182,7 +182,7 @@ public class GroupDAO {
     public List<Message> getGroupHistory(int groupId, int userId, int limit, int offset) {
         List<Message> history = new ArrayList<>();
 
-        String sql = "SELECT gm.id, u.username as sender, u.display_name as sender_display_name, " +
+        String sql = "SELECT gm.id, u.username as sender, u.display_name as sender_display_name, gm.sent_at, " +
                 "CASE WHEN gm.is_deleted = TRUE THEN '[This message was deleted]' ELSE gm.content END as content " +
                 "FROM group_messages gm JOIN users u ON gm.sender_id = u.id " +
                 "WHERE gm.group_id = ? " +
@@ -207,6 +207,10 @@ public class GroupDAO {
                             rs.getString("content"));
                     msg.setMessageId(rs.getInt("id"));
                     msg.setDisplayName(rs.getString("sender_display_name"));
+                    java.sql.Timestamp sentAt = rs.getTimestamp("sent_at");
+                    if (sentAt != null) {
+                        msg.setTimestamp(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(sentAt));
+                    }
                     history.add(msg);
                 }
             }
