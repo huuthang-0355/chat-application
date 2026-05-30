@@ -121,29 +121,11 @@ public class LoginView extends JFrame {
         serverCombo = new JComboBox<>(comboModel);
         formPanel.add(serverCombo, gbc);
 
-        // Host row
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.weightx = 0.4;
-        formPanel.add(new JLabel("Host:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0.6;
+        // Initialize host and port fields in-memory (not added to main form panel)
         hostField = new JTextField("localhost", 20);
-        formPanel.add(hostField, gbc);
-
-        // Port row
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.weightx = 0.4;
-        formPanel.add(new JLabel("Port:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0.6;
         portField = new JTextField("5000", 20);
-        formPanel.add(portField, gbc);
 
-        // Server list buttons row
+        // Server list buttons row placed at gridy = 4
         JPanel serverButtonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         JButton addServerBtn = new JButton("Add Bookmark");
         JButton updateServerBtn = new JButton("Update");
@@ -153,7 +135,7 @@ public class LoginView extends JFrame {
         serverButtonsPanel.add(deleteServerBtn);
 
         gbc.gridx = 0;
-        gbc.gridy = 6;
+        gbc.gridy = 4;
         gbc.gridwidth = 2;
         formPanel.add(serverButtonsPanel, gbc);
         gbc.gridwidth = 1; // reset
@@ -175,22 +157,47 @@ public class LoginView extends JFrame {
             portField.setText(String.valueOf(selected.port));
         }
 
-        // Add Bookmark logic
+        // Add Bookmark popup logic
         addServerBtn.addActionListener(e -> {
-            String name = JOptionPane.showInputDialog(this, "Enter Server Bookmark Name:", "Add Server Connection", JOptionPane.QUESTION_MESSAGE);
-            if (name != null && !name.trim().isEmpty()) {
-                String host = hostField.getText().trim();
+            JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
+            JTextField nameInput = new JTextField();
+            JTextField hostInput = new JTextField("localhost");
+            JTextField portInput = new JTextField("5000");
+
+            panel.add(new JLabel("Bookmark Name:"));
+            panel.add(nameInput);
+            panel.add(new JLabel("Host:"));
+            panel.add(hostInput);
+            panel.add(new JLabel("Port:"));
+            panel.add(portInput);
+
+            int result = JOptionPane.showConfirmDialog(this, panel, "Add Server Connection", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (result == JOptionPane.OK_OPTION) {
+                String name = nameInput.getText().trim();
+                String host = hostInput.getText().trim();
+                String portStr = portInput.getText().trim();
+
+                if (name.isEmpty() || host.isEmpty() || portStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "All fields are required.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 int port = 5000;
                 try {
-                    port = Integer.parseInt(portField.getText().trim());
+                    port = Integer.parseInt(portStr);
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "Invalid Port number", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                client.config.ServerConfigManager.ServerItem newItem = new client.config.ServerConfigManager.ServerItem(name.trim(), host, port);
+
+                client.config.ServerConfigManager.ServerItem newItem = new client.config.ServerConfigManager.ServerItem(name, host, port);
                 comboModel.addElement(newItem);
                 serverCombo.setSelectedItem(newItem);
-                
+
+                // update in-memory fields
+                hostField.setText(host);
+                portField.setText(String.valueOf(port));
+
                 // save list
                 java.util.List<client.config.ServerConfigManager.ServerItem> list = new java.util.ArrayList<>();
                 for (int i = 0; i < comboModel.getSize(); i++) {
@@ -200,29 +207,54 @@ public class LoginView extends JFrame {
             }
         });
 
-        // Update selected bookmark
+        // Update selected bookmark popup logic
         updateServerBtn.addActionListener(e -> {
             client.config.ServerConfigManager.ServerItem selected = (client.config.ServerConfigManager.ServerItem) serverCombo.getSelectedItem();
             if (selected != null) {
-                String host = hostField.getText().trim();
-                int port = 5000;
-                try {
-                    port = Integer.parseInt(portField.getText().trim());
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Invalid Port number", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+                JPanel panel = new JPanel(new GridLayout(2, 2, 5, 5));
+                JTextField hostInput = new JTextField(selected.host);
+                JTextField portInput = new JTextField(String.valueOf(selected.port));
+
+                panel.add(new JLabel("Host:"));
+                panel.add(hostInput);
+                panel.add(new JLabel("Port:"));
+                panel.add(portInput);
+
+                int result = JOptionPane.showConfirmDialog(this, panel, "Update Server: " + selected.name, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+                if (result == JOptionPane.OK_OPTION) {
+                    String host = hostInput.getText().trim();
+                    String portStr = portInput.getText().trim();
+
+                    if (host.isEmpty() || portStr.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Host and Port cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    int port = 5000;
+                    try {
+                        port = Integer.parseInt(portStr);
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(this, "Invalid Port number", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    selected.host = host;
+                    selected.port = port;
+
+                    // update in-memory fields
+                    hostField.setText(host);
+                    portField.setText(String.valueOf(port));
+
+                    serverCombo.repaint();
+
+                    // save list
+                    java.util.List<client.config.ServerConfigManager.ServerItem> list = new java.util.ArrayList<>();
+                    for (int i = 0; i < comboModel.getSize(); i++) {
+                        list.add(comboModel.getElementAt(i));
+                    }
+                    client.config.ServerConfigManager.saveServers(list);
+                    JOptionPane.showMessageDialog(this, "Server configuration updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 }
-                selected.host = host;
-                selected.port = port;
-                serverCombo.repaint();
-                
-                // save list
-                java.util.List<client.config.ServerConfigManager.ServerItem> list = new java.util.ArrayList<>();
-                for (int i = 0; i < comboModel.getSize(); i++) {
-                    list.add(comboModel.getElementAt(i));
-                }
-                client.config.ServerConfigManager.saveServers(list);
-                JOptionPane.showMessageDialog(this, "Server configuration updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
