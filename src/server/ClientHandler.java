@@ -91,7 +91,8 @@ public class ClientHandler implements Runnable {
             // sever log
             server.log("[SERVER-LOG]: " + this.username + " has connected.");
             if (server.getListener() != null) {
-                server.getListener().onClientConnected(this.username, this.displayName, clientSocket.getInetAddress().getHostAddress());
+                server.getListener().onClientConnected(this.username, this.displayName,
+                        clientSocket.getInetAddress().getHostAddress());
             }
 
             // automatically login when registering successfully
@@ -160,7 +161,8 @@ public class ClientHandler implements Runnable {
             // sever log
             server.log("[SERVER-LOG]: " + this.username + " has connected.");
             if (server.getListener() != null) {
-                server.getListener().onClientConnected(this.username, this.displayName, clientSocket.getInetAddress().getHostAddress());
+                server.getListener().onClientConnected(this.username, this.displayName,
+                        clientSocket.getInetAddress().getHostAddress());
             }
 
             // save db for loggin
@@ -252,14 +254,15 @@ public class ClientHandler implements Runnable {
 
                         if (targetHandler != null) {
                             // save private message into db (with receiver_id)
-                            int prvMsgId = messageDAO.saveMessage(this.userId, targetHandler.getUserId(), message.getContent());
-                            
+                            int prvMsgId = messageDAO.saveMessage(this.userId, targetHandler.getUserId(),
+                                    message.getContent());
+
                             if (prvMsgId != -1)
                                 message.setMessageId(prvMsgId);
 
                             // send data to target user
                             targetHandler.send(message);
-                            
+
                             // echo data back to sender to show [YOU]
                             this.send(message);
                         } else {
@@ -302,6 +305,14 @@ public class ClientHandler implements Runnable {
                             Message listMsg = new Message(MessageType.GROUP_LIST, "SYSTEM", this.username, groupList);
 
                             this.send(listMsg);
+
+                            // Broadcast join notification to group members using display name
+                            String joinNameToShow = (this.displayName != null && !this.displayName.trim().isEmpty())
+                                    ? this.displayName
+                                    : this.username;
+                            Message joinMsg = new Message(MessageType.GROUP_MSG, "SYSTEM", String.valueOf(joinGroupId),
+                                    joinNameToShow + " has joined the group.");
+                            server.sendToGroupMembers(joinGroupId, joinMsg);
                         } else {
                             Message err = new Message(MessageType.ERROR, "SYSTEM", this.username, joinResult);
 
@@ -313,9 +324,12 @@ public class ClientHandler implements Runnable {
                     case LEAVE_GROUP:
                         int leaveGroupId = Integer.parseInt(message.getContent());
 
-                        // notify remaining members before leaving
+                        // notify remaining members before leaving using display name
+                        String leaveNameToShow = (this.displayName != null && !this.displayName.trim().isEmpty())
+                                ? this.displayName
+                                : this.username;
                         Message leaveMsg = new Message(MessageType.GROUP_MSG, "SYSTEM", String.valueOf(leaveGroupId),
-                                this.username + " has left the group.");
+                                leaveNameToShow + " has left the group.");
 
                         server.sendToGroupMembers(leaveGroupId, leaveMsg);
 
@@ -420,9 +434,11 @@ public class ClientHandler implements Runnable {
                                 }
                                 server.sendToGroupMembers(groupId, notifyMsg);
                             } else {
-                                ClientHandler fileTargetHandler = server.getClientHandlerByUsername(message.getTarget());
+                                ClientHandler fileTargetHandler = server
+                                        .getClientHandlerByUsername(message.getTarget());
                                 if (fileTargetHandler != null) {
-                                    int savedId = messageDAO.saveMessage(this.userId, fileTargetHandler.getUserId(), dbContent);
+                                    int savedId = messageDAO.saveMessage(this.userId, fileTargetHandler.getUserId(),
+                                            dbContent);
                                     if (savedId != -1) {
                                         notifyMsg.setMessageId(savedId);
                                     }
@@ -433,7 +449,7 @@ public class ClientHandler implements Runnable {
 
                         } catch (Exception e) {
                             this.send(new Message(MessageType.ERROR, "SYSTEM", this.username,
-                                     "Failed to save file on server.", null, null));
+                                    "Failed to save file on server.", null, null));
                         }
                         break;
 

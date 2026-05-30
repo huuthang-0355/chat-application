@@ -424,17 +424,7 @@ public class ChatController {
                 // send object
                 networkService.send(uploadMsg);
 
-                // notify UI in the correct tab
-                SwingUtilities.invokeLater(() -> {
-
-                    String text = "[SYSTEM]: YOU sent file: " + selectedFile.getName();
-
-                    if (target.equals("ALL"))
-                        chatView.displayMessage(text);
-                    else if (target.matches("\\d+"))
-                        chatView.displayGroupMessage(Integer.parseInt(target), text);
-
-                });
+                // No local redundant notification here as the server-confirmed FILE_NOTIFY will handle it.
             } catch (IOException ex) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
                         "Failed to read file: " + ex.getMessage(),
